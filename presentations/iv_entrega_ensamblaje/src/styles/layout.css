@@ -275,7 +275,9 @@ canvas[data-testid="stage-webgl"] {
   z-index: var(--z-faro);
   pointer-events: none;
   display: grid;
-  place-items: center;
+  align-items: start;
+  justify-items: center;
+  padding-top: 76px;
   opacity: 0;
   transition: opacity 0.35s ease;
 }

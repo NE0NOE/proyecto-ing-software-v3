@@ -648,9 +648,14 @@ function renderVisualPanel(slide) {
 }
 
 export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, stageApi) {
+  let activeSlideId = null;
   let lastRenderedId = null;
   let activeCleanup = null;
   let actTimer = null;
+  let leaveTimer = null;
+  let safetyTimer = null;
+  let pendingTransitionToken = 0;
+  let isAwaitingTransition = false;
 
   function renderNotes(state, slide) {
     let notesEl = notesSlot.querySelector('[data-testid="presenter-notes"]');
@@ -694,17 +699,21 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
     actOverlay.classList.add('is-active');
     actTimer = setTimeout(() => {
       actOverlay.classList.remove('is-active');
-    }, 1200);
+    }, 1100);
   }
 
-  function renderSlide(slide, state) {
+  function renderSlide(slide, state, { awaitingStage = false } = {}) {
     if (activeCleanup) {
       activeCleanup();
       activeCleanup = null;
     }
 
     lastRenderedId = slide.id;
-    const enterCls = state.reducedMotion ? '' : 'is-entering';
+    const enterCls = awaitingStage
+      ? 'is-awaiting-stage'
+      : state.reducedMotion
+        ? ''
+        : 'is-entering';
 
     if (slide.visualType === 'hero-key') {
       const data = slide.structuredData || {};
@@ -932,17 +941,99 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
     }
   }
 
+  function cancelPendingTransition() {
+    pendingTransitionToken += 1;
+    clearTimeout(leaveTimer);
+    clearTimeout(safetyTimer);
+    leaveTimer = null;
+    safetyTimer = null;
+    isAwaitingTransition = false;
+  }
+
+  function revealActiveCard(slide, state) {
+    const card = slideSlot.querySelector('.slide-card');
+    if (lastRenderedId === slide.id && card) {
+      card.classList.remove('is-awaiting-stage', 'is-leaving');
+      if (!state.reducedMotion) {
+        void card.offsetWidth;
+        card.classList.add('is-entering');
+      }
+      return;
+    }
+    renderSlide(slide, state, { awaitingStage: false });
+  }
+
   function handleStateUpdate(state, meta = {}) {
     const slide = SLIDES[state.currentSlideIndex] || SLIDES[0];
 
-    if (meta.type === 'init' || (meta.type === 'slide' && state.currentSlideId !== lastRenderedId)) {
-      renderSlide(slide, state);
+    if (meta.type === 'init') {
+      cancelPendingTransition();
+      activeSlideId = slide.id;
+      renderSlide(slide, state, { awaitingStage: false });
       renderNotes(state, slide);
-      if (meta.type === 'slide' && meta.changed) {
-        stageApi?.setSlide?.(slide);
-        triggerActTransitionIfChanged(slide, state, meta);
+      return;
+    }
+
+    if (meta.type === 'slide' && (state.currentSlideId !== activeSlideId || isAwaitingTransition)) {
+      activeSlideId = slide.id;
+      cancelPendingTransition();
+      renderNotes(state, slide);
+
+      if (state.reducedMotion || !meta.changed) {
+        renderSlide(slide, state, { awaitingStage: false });
+        if (meta.changed) {
+          stageApi?.setSlide?.(slide);
+          triggerActTransitionIfChanged(slide, state, meta);
+        }
+        return;
+      }
+
+      const token = ++pendingTransitionToken;
+      isAwaitingTransition = true;
+      let completed = false;
+
+      const finishTransition = () => {
+        if (completed || token !== pendingTransitionToken) return;
+        completed = true;
+        clearTimeout(leaveTimer);
+        clearTimeout(safetyTimer);
+        leaveTimer = null;
+        safetyTimer = null;
+        isAwaitingTransition = false;
+        revealActiveCard(slide, appState.getState());
+      };
+
+      const prevCard = slideSlot.querySelector('.slide-card');
+      const hasVisiblePrev =
+        prevCard &&
+        !prevCard.classList.contains('is-awaiting-stage') &&
+        !prevCard.classList.contains('is-leaving');
+
+      if (hasVisiblePrev) {
+        prevCard.classList.remove('is-entering');
+        prevCard.classList.add('is-leaving');
+        leaveTimer = setTimeout(() => {
+          leaveTimer = null;
+          if (completed || token !== pendingTransitionToken) return;
+          renderSlide(slide, appState.getState(), { awaitingStage: true });
+        }, 220);
+      } else {
+        renderSlide(slide, state, { awaitingStage: true });
+      }
+
+      triggerActTransitionIfChanged(slide, state, meta);
+      if (stageApi?.setSlide) {
+        stageApi.setSlide(slide, { onTransitionComplete: finishTransition });
+        safetyTimer = setTimeout(finishTransition, 2500);
+      } else {
+        finishTransition();
       }
       return;
+    }
+
+    if (state.reducedMotion && isAwaitingTransition) {
+      cancelPendingTransition();
+      revealActiveCard(slide, state);
     }
 
     if (meta.type === 'notes') {
@@ -955,6 +1046,7 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
 
   return {
     destroy() {
+      cancelPendingTransition();
       clearTimeout(actTimer);
       activeCleanup?.();
       activeCleanup = null;

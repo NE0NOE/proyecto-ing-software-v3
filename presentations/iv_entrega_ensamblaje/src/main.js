@@ -68,7 +68,9 @@ export function bootstrapApp(modules = {}) {
   const stageApi = stageInit
     ? stageInit(slots.canvasWrap, slots.labelWrap, appState)
     : {
-        setSlide() {},
+        setSlide(_s, opts) {
+          opts?.onTransitionComplete?.();
+        },
         triggerActTransition(_act, onMidpoint) {
           onMidpoint?.();
         },

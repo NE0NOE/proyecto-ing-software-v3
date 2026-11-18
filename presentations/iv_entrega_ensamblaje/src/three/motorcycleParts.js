@@ -352,13 +352,13 @@ export function createMotorcycleRig() {
   }
 
   function tick(dt, elapsed) {
-    const posBlend = 1 - Math.exp(-1.9 * dt);
+    const posBlend = 1 - Math.exp(-2.6 * dt);
     for (const pg of partGroups) {
       if (pg.userData.targetPos) {
         pg.position.lerp(pg.userData.targetPos, posBlend);
       }
     }
-    transitionYaw *= Math.exp(-1.45 * dt);
+    transitionYaw *= Math.exp(-2.0 * dt);
 
     if (activeWheelSpeed > 0) {
       for (const w of wheelsSpinGroups) {

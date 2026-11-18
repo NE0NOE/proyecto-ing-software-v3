@@ -1,4 +1,4 @@
-import { PRESENTERS, REFS_BY_SLIDE, SLIDES } from '../data/slides.js';
+import { REFS_BY_SLIDE, SLIDES } from '../data/slides.js';
 import { resolveSlideIndex } from '../state/appState.js';
 import { escapeHtml } from './charts.js';
 
@@ -50,8 +50,6 @@ export function initChrome(headerSlot, footerSlot, appState) {
 
   function renderHeader(state) {
     const slide = SLIDES[state.currentSlideIndex] || SLIDES[0];
-    const presenterInfo = PRESENTERS[slide.presenter];
-    const presenterText = presenterInfo ? presenterInfo.name : slide.presenter;
     const odoCurrent = String(state.currentSlideIndex + 1).padStart(3, '0');
     const odoTotal = String(SLIDES.length).padStart(3, '0');
 
@@ -84,10 +82,6 @@ export function initChrome(headerSlot, footerSlot, appState) {
           </nav>
         </div>
         <div class="header-right">
-          <div data-testid="presenter-badge" title="${escapeHtml(presenterInfo?.role || 'Equipo MREC')}">
-            <span class="slide-pill slide-pill--blue">${escapeHtml(presenterInfo?.initials || 'MR')}</span>
-            <span>${escapeHtml(presenterText)}</span>
-          </div>
           <div data-testid="odometer" title="Diapositiva actual">km ${odoCurrent} / ${odoTotal}</div>
           <div data-testid="timer-display" class="slide-pill" title="Cronómetro de defensa">${formatTimer(state.elapsedSeconds)}</div>
           <button

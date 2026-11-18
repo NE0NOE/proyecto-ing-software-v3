@@ -79,7 +79,9 @@ export function initStage(canvasWrap, labelWrap, appState) {
       }
     });
     return {
-      setSlide() {},
+      setSlide(_s, opts) {
+        opts?.onTransitionComplete?.();
+      },
       triggerActTransition(_act, onMidpoint) {
         onMidpoint?.();
       },
@@ -241,7 +243,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
     scene.add(activePropHandle.group);
   }
 
-  function animateCameraTo(slide, { immediate = false } = {}) {
+  function animateCameraTo(slide, { immediate = false, onComplete = null } = {}) {
     const preset = slide.cameraPreset || { pos: [3.8, 1.8, 5.2], target: [0, 0.7, 0], fov: 44 };
     const tx = (preset.target?.[0] ?? 0) + drawerOffsetX;
     const ty = preset.target?.[1] ?? 0.7;
@@ -257,17 +259,22 @@ export function initStage(canvasWrap, labelWrap, appState) {
       camera.updateProjectionMatrix();
       camera.lookAt(lookTarget);
       needsRender = true;
+      onComplete?.();
       return;
     }
 
-    currentCamTween = gsap.timeline();
+    currentCamTween = gsap.timeline({
+      onComplete: () => {
+        onComplete?.();
+      },
+    });
     currentCamTween.to(
       camera.position,
       {
         x: preset.pos[0],
         y: preset.pos[1],
         z: preset.pos[2],
-        duration: 2.3,
+        duration: 1.85,
         ease: 'power2.inOut',
       },
       0
@@ -278,7 +285,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
         x: tx,
         y: ty,
         z: tz,
-        duration: 2.3,
+        duration: 1.85,
         ease: 'power2.inOut',
       },
       0
@@ -287,7 +294,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
       camera,
       {
         fov: preset.fov || 44,
-        duration: 2.2,
+        duration: 1.8,
         ease: 'power2.inOut',
         onUpdate: () => camera.updateProjectionMatrix(),
       },
@@ -295,7 +302,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
     );
   }
 
-  function setSlide(slideIndexOrObj) {
+  function setSlide(slideIndexOrObj, { onTransitionComplete = null } = {}) {
     const slide =
       typeof slideIndexOrObj === 'object' && slideIndexOrObj
         ? slideIndexOrObj
@@ -312,7 +319,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
     previousSlideIndex = nextIndex;
 
     swapChapterProps(slide);
-    animateCameraTo(slide, { immediate });
+    animateCameraTo(slide, { immediate, onComplete: onTransitionComplete });
     isInitialMount = false;
 
     if (slide.id === 'S00' || slide.id === 'S20') {
