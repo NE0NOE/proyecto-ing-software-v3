@@ -1,9 +1,15 @@
 import './styles/tokens.css';
 import './styles/layout.css';
 import './styles/drawers.css';
+import './styles/slides.css';
 
-import { appState } from './state/appState.js';
+import { appState, resolveSlideIndex } from './state/appState.js';
 import { SLIDES, CHAPTERS } from './data/slides.js';
+import { initStage } from './three/stageManager.js';
+import { initChrome } from './ui/chrome.js';
+import { initSlideRenderer } from './ui/slideRenderer.js';
+import { initOverview } from './ui/overview.js';
+import { initDrawers } from './drawers/drawerShell.js';
 
 function ensureRootShell(rootEl) {
   rootEl.innerHTML = `
@@ -11,12 +17,12 @@ function ensureRootShell(rootEl) {
       <div id="stage-viewport" data-testid="stage-viewport">
         <div id="stage-canvas-wrap">
           <div id="stage-fallback" data-testid="stage-fallback" hidden></div>
-          <div id="stage-labels"></div>
         </div>
         <div id="act-transition-overlay" aria-hidden="true"></div>
         <header id="header-slot"></header>
         <main id="slide-slot"></main>
         <aside id="notes-slot"></aside>
+        <div id="stage-labels"></div>
         <footer id="footer-slot"></footer>
         <div id="overview-slot"></div>
       </div>
@@ -38,17 +44,29 @@ function ensureRootShell(rootEl) {
   };
 }
 
-/**
- * Clean module-boundary wiring hooks so M2, M3, M4 plug in with zero coupling to main.js internals.
- * During M1, defaults are no-op stubs; M5 (or incremental M2/M3/M4 wiring) passes real initializers.
- */
 export function bootstrapApp(modules = {}) {
   const rootEl = document.getElementById('app');
   if (!rootEl) throw new Error('Missing #app root element');
   const slots = ensureRootShell(rootEl);
 
-  const stageApi = modules.initStage
-    ? modules.initStage(slots.canvasWrap, slots.labelWrap, appState)
+  if (typeof window !== 'undefined') {
+    const searchParams = new URLSearchParams(window.location.search || '');
+    const querySlide = searchParams.get('slide');
+    const hashSlide = (window.location.hash || '').replace(/^#/, '');
+    const initialIdx = resolveSlideIndex(querySlide) ?? resolveSlideIndex(hashSlide);
+    if (initialIdx !== null) {
+      appState.goToSlide(initialIdx, { source: 'url' });
+    }
+  }
+
+  const stageInit = modules.initStage === undefined ? initStage : modules.initStage;
+  const chromeInit = modules.initChrome === undefined ? initChrome : modules.initChrome;
+  const slideInit = modules.initSlideRenderer === undefined ? initSlideRenderer : modules.initSlideRenderer;
+  const overviewInit = modules.initOverview === undefined ? initOverview : modules.initOverview;
+  const drawersInit = modules.initDrawers === undefined ? initDrawers : modules.initDrawers;
+
+  const stageApi = stageInit
+    ? stageInit(slots.canvasWrap, slots.labelWrap, appState)
     : {
         setSlide() {},
         triggerActTransition(_act, onMidpoint) {
@@ -68,12 +86,12 @@ export function bootstrapApp(modules = {}) {
       };
 
   const uiHandles = [];
-  if (modules.initChrome) uiHandles.push(modules.initChrome(slots.headerSlot, slots.footerSlot, appState));
-  if (modules.initSlideRenderer) {
-    uiHandles.push(modules.initSlideRenderer(slots.slideSlot, slots.notesSlot, slots.actOverlay, appState, stageApi));
+  if (chromeInit) uiHandles.push(chromeInit(slots.headerSlot, slots.footerSlot, appState));
+  if (slideInit) {
+    uiHandles.push(slideInit(slots.slideSlot, slots.notesSlot, slots.actOverlay, appState, stageApi));
   }
-  if (modules.initOverview) uiHandles.push(modules.initOverview(slots.overviewSlot, appState));
-  if (modules.initDrawers) uiHandles.push(modules.initDrawers(slots.drawerSlot, appState));
+  if (overviewInit) uiHandles.push(overviewInit(slots.overviewSlot, appState));
+  if (drawersInit) uiHandles.push(drawersInit(slots.drawerSlot, appState));
 
   const syncShell = (state, meta = {}) => {
     slots.shell.dataset.slideId = state.currentSlideId;
@@ -90,7 +108,10 @@ export function bootstrapApp(modules = {}) {
 
   const onKeyDown = (event) => {
     const tag = event.target?.tagName;
-    const isEditing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable;
+    const inputType = tag === 'INPUT' ? String(event.target.type || 'text').toLowerCase() : '';
+    const isNonTextInput = tag === 'INPUT' && ['range', 'checkbox', 'radio', 'button', 'submit', 'reset', 'color', 'file'].includes(inputType);
+    const isEditing = tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable || (tag === 'INPUT' && !isNonTextInput);
+    const isInteractiveTarget = Boolean(event.target?.closest?.('button, a, [role="button"], summary'));
     const state = appState.getState();
 
     if (event.key === 'Escape') {
@@ -109,14 +130,23 @@ export function bootstrapApp(modules = {}) {
       return;
     }
     if (isEditing || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (inputType === 'range' && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) return;
 
     const slide = SLIDES[state.currentSlideIndex];
-    const firstPdf = slide?.refs?.find((r) => r.type === 'pdf');
-    const firstExcel = slide?.refs?.find((r) => r.type === 'excel');
+    const refs = slide?.refs || [];
+    const firstPdf = refs.find((r) => r.type === 'pdf' && r.primary) || refs.find((r) => r.type === 'pdf');
+    const firstExcel = refs.find((r) => r.type === 'excel' && r.primary) || refs.find((r) => r.type === 'excel');
+    const firstSys = refs.find((r) => r.type === 'sistema' && r.primary) || refs.find((r) => r.type === 'sistema');
 
     switch (event.key) {
       case 'ArrowRight':
+        if (!state.drawerOpen && !state.overviewOpen) {
+          event.preventDefault();
+          appState.nextSlide();
+        }
+        break;
       case ' ':
+        if (isInteractiveTarget) return;
         if (!state.drawerOpen && !state.overviewOpen) {
           event.preventDefault();
           appState.nextSlide();
@@ -129,6 +159,7 @@ export function bootstrapApp(modules = {}) {
         }
         break;
       case 'Enter':
+        if (isInteractiveTarget) return;
         if (state.currentSlideId === 'S00' && !state.drawerOpen && !state.overviewOpen) {
           event.preventDefault();
           appState.nextSlide();
@@ -150,7 +181,7 @@ export function bootstrapApp(modules = {}) {
       case 'S':
         event.preventDefault();
         if (state.drawerOpen && state.activeDrawerTab === 'sistema') appState.closeDrawer();
-        else appState.openSistema();
+        else appState.openSistema(firstSys?.stepId ?? 'pos-sale');
         break;
       case 'o':
       case 'O':

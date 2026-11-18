@@ -42,7 +42,7 @@ export const EVIDENCIAS = [
     id: 'regresion-113',
     date: '2026-10-06',
     category: 'Pruebas y Regresión',
-    title: 'Regresión intermedia y prueba negativa de respaldo (113 pruebas)',
+    title: 'Regresión intermedia y prueba negativa SHA-256 (113 pruebas)',
     command: 'scripts/manage-postgres.ps1 test --noinput --verbosity 0',
     environment: 'PostgreSQL 18.4 local · Base temporal aislada',
     metrics: [
