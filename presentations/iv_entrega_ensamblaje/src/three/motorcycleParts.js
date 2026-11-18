@@ -62,7 +62,9 @@ function tagDualMaterial(mesh, solidColor, metalness = 0.65, roughness = 0.3, em
 function registerPartGroup(group, unlockStage, explodeVec) {
   group.userData.unlockStage = unlockStage;
   group.userData.basePos = group.position.clone();
+  group.userData.targetPos = group.position.clone();
   group.userData.explodeOffset = explodeVec.clone();
+  group.userData.wasSolid = false;
   return group;
 }
 
@@ -299,8 +301,10 @@ export function createMotorcycleRig() {
 
   let activeWheelSpeed = 0.0;
   let activeEmissivePulse = 0.0;
+  let targetBeamOpacity = 0.03;
+  let transitionYaw = 0.0;
 
-  function applyAssemblyState(stage, progress = 0) {
+  function applyAssemblyState(stage, progress = 0, { immediate = false } = {}) {
     const rank = stageRank(stage);
     const isExploded = stage === 'exploded';
     const isMoving = stage === 'dyno' || stage === 'road';
@@ -310,12 +314,21 @@ export function createMotorcycleRig() {
     for (const pg of partGroups) {
       const reqRank = stageRank(pg.userData.unlockStage);
       const isSolid = rank >= reqRank && !isExploded;
+      const wasSolid = Boolean(pg.userData.wasSolid);
 
       if (isExploded) {
-        pg.position.copy(pg.userData.basePos).add(pg.userData.explodeOffset);
+        pg.userData.targetPos.copy(pg.userData.basePos).add(pg.userData.explodeOffset);
       } else {
-        pg.position.copy(pg.userData.basePos);
+        pg.userData.targetPos.copy(pg.userData.basePos);
       }
+
+      if (immediate) {
+        pg.position.copy(pg.userData.targetPos);
+      } else if (!wasSolid && isSolid) {
+        // Desliza suavemente el nuevo subsistema hacia su posición final de ensamblaje
+        pg.position.copy(pg.userData.basePos).addScaledVector(pg.userData.explodeOffset, 0.55);
+      }
+      pg.userData.wasSolid = isSolid;
 
       pg.traverse((node) => {
         if (!node.isMesh || !node.userData.wireMat || !node.userData.solidMat) return;
@@ -331,10 +344,22 @@ export function createMotorcycleRig() {
       });
     }
 
-    beamMat.opacity = rank >= stageRank('ignition') || isMoving ? 0.16 : 0.03;
+    targetBeamOpacity = rank >= stageRank('ignition') || isMoving ? 0.16 : 0.03;
+    if (immediate) {
+      beamMat.opacity = targetBeamOpacity;
+      transitionYaw = 0.0;
+    }
   }
 
   function tick(dt, elapsed) {
+    const posBlend = 1 - Math.exp(-1.9 * dt);
+    for (const pg of partGroups) {
+      if (pg.userData.targetPos) {
+        pg.position.lerp(pg.userData.targetPos, posBlend);
+      }
+    }
+    transitionYaw *= Math.exp(-1.45 * dt);
+
     if (activeWheelSpeed > 0) {
       for (const w of wheelsSpinGroups) {
         w.rotation.z -= dt * activeWheelSpeed;
@@ -344,15 +369,20 @@ export function createMotorcycleRig() {
       gears[i].rotation.y += dt * (i % 2 === 0 ? 1.4 : -1.4) * (activeWheelSpeed > 0 ? 1.8 : 0.5);
     }
     keyCylinder.rotation.y = Math.sin(elapsed * 1.3) * 0.35;
-    if (beamMat.opacity > 0.01) {
-      beamMat.opacity = Math.max(0.02, beamMat.opacity * 0.995 + Math.sin(elapsed * 3.1) * 0.008 * activeEmissivePulse);
-    }
+    const beamTarget = targetBeamOpacity + Math.max(0, Math.sin(elapsed * 2.4)) * 0.015 * activeEmissivePulse;
+    beamMat.opacity += (beamTarget - beamMat.opacity) * (1 - Math.exp(-1.8 * dt));
   }
 
   return {
     root,
     applyAssemblyState,
     tick,
+    pulseTransition(direction = 1) {
+      transitionYaw = Math.max(-0.32, Math.min(0.32, direction * 0.22));
+    },
+    getTransitionYaw() {
+      return transitionYaw;
+    },
     pulseHeadlight() {
       beamMat.opacity = 0.42;
     },

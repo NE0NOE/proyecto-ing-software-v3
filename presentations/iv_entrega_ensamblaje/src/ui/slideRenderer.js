@@ -21,16 +21,12 @@ import {
 } from './simulations.js';
 
 function renderBadgeRow(slide) {
-  const presenterInfo = PRESENTERS[slide.presenter];
   return `
     <div class="slide-top-meta">
       <div class="slide-badges-row">
         <span class="slide-pill slide-pill--blue">${escapeHtml(slide.id)}</span>
         <span class="slide-pill">${escapeHtml(slide.entrega)} · ${escapeHtml(slide.chapter)}</span>
         <span class="slide-pill slide-pill--orange">${escapeHtml(slide.act)}</span>
-      </div>
-      <div class="slide-badges-row">
-        <span class="slide-pill slide-pill--green">Expositor: ${escapeHtml(presenterInfo ? presenterInfo.name : slide.presenter)}</span>
       </div>
     </div>
   `;
@@ -698,7 +694,7 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
     actOverlay.classList.add('is-active');
     actTimer = setTimeout(() => {
       actOverlay.classList.remove('is-active');
-    }, 750);
+    }, 1200);
   }
 
   function renderSlide(slide, state) {

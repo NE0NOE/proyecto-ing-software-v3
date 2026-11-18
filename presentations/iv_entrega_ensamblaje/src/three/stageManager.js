@@ -187,20 +187,20 @@ export function initStage(canvasWrap, labelWrap, appState) {
 
   let activePropHandle = null;
   let currentCamTween = null;
+  let currentThemeTween = null;
   let drawerOffsetX = 0;
   let inspectBannerReset = null;
   let currentActTheme = 0;
+  let previousSlideIndex = appState.getState().currentSlideIndex || 0;
+  let isInitialMount = true;
   let needsRender = true;
 
-  function applyThemeForAct(actNumber) {
+  function applyThemeForAct(actNumber, { immediate = false } = {}) {
     if (actNumber === currentActTheme) return;
     currentActTheme = actNumber;
     const t = ACT_THEMES[actNumber] || ACT_THEMES[0];
-    scene.background.setHex(t.bg);
-    scene.fog.color.setHex(t.fog);
-    keyLight.color.setHex(t.key);
-    rimLight.color.setHex(t.rim);
-    hemiLight.intensity = t.ambient;
+
+    currentThemeTween?.kill?.();
     pMat.color.setHex(t.gridA);
 
     scene.remove(gridHelper);
@@ -208,6 +208,27 @@ export function initStage(canvasWrap, labelWrap, appState) {
     gridHelper = new THREE.GridHelper(22, 32, t.gridA, t.gridB);
     gridHelper.position.y = 0;
     scene.add(gridHelper);
+
+    if (immediate || appState.getState().reducedMotion) {
+      scene.background.setHex(t.bg);
+      scene.fog.color.setHex(t.fog);
+      keyLight.color.setHex(t.key);
+      rimLight.color.setHex(t.rim);
+      hemiLight.intensity = t.ambient;
+      return;
+    }
+
+    const bgTarget = new THREE.Color(t.bg);
+    const fogTarget = new THREE.Color(t.fog);
+    const keyTarget = new THREE.Color(t.key);
+    const rimTarget = new THREE.Color(t.rim);
+
+    currentThemeTween = gsap.timeline();
+    currentThemeTween.to(scene.background, { r: bgTarget.r, g: bgTarget.g, b: bgTarget.b, duration: 0.9, ease: 'power2.out' }, 0);
+    currentThemeTween.to(scene.fog.color, { r: fogTarget.r, g: fogTarget.g, b: fogTarget.b, duration: 0.9, ease: 'power2.out' }, 0);
+    currentThemeTween.to(keyLight.color, { r: keyTarget.r, g: keyTarget.g, b: keyTarget.b, duration: 1.1, ease: 'power2.out' }, 0);
+    currentThemeTween.to(rimLight.color, { r: rimTarget.r, g: rimTarget.g, b: rimTarget.b, duration: 1.1, ease: 'power2.out' }, 0);
+    currentThemeTween.to(hemiLight, { intensity: t.ambient, duration: 1.1, ease: 'power2.out' }, 0);
   }
 
   function swapChapterProps(slide) {
@@ -220,7 +241,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
     scene.add(activePropHandle.group);
   }
 
-  function animateCameraTo(slide) {
+  function animateCameraTo(slide, { immediate = false } = {}) {
     const preset = slide.cameraPreset || { pos: [3.8, 1.8, 5.2], target: [0, 0.7, 0], fov: 44 };
     const tx = (preset.target?.[0] ?? 0) + drawerOffsetX;
     const ty = preset.target?.[1] ?? 0.7;
@@ -229,7 +250,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
     currentCamTween?.kill?.();
     const reduced = appState.getState().reducedMotion;
 
-    if (reduced) {
+    if (immediate || reduced) {
       camera.position.set(preset.pos[0], preset.pos[1], preset.pos[2]);
       lookTarget.set(tx, ty, tz);
       camera.fov = preset.fov || 44;
@@ -246,8 +267,8 @@ export function initStage(canvasWrap, labelWrap, appState) {
         x: preset.pos[0],
         y: preset.pos[1],
         z: preset.pos[2],
-        duration: 0.9,
-        ease: 'power3.out',
+        duration: 2.3,
+        ease: 'power2.inOut',
       },
       0
     );
@@ -257,8 +278,8 @@ export function initStage(canvasWrap, labelWrap, appState) {
         x: tx,
         y: ty,
         z: tz,
-        duration: 0.9,
-        ease: 'power3.out',
+        duration: 2.3,
+        ease: 'power2.inOut',
       },
       0
     );
@@ -266,8 +287,8 @@ export function initStage(canvasWrap, labelWrap, appState) {
       camera,
       {
         fov: preset.fov || 44,
-        duration: 0.85,
-        ease: 'power2.out',
+        duration: 2.2,
+        ease: 'power2.inOut',
         onUpdate: () => camera.updateProjectionMatrix(),
       },
       0
@@ -280,10 +301,19 @@ export function initStage(canvasWrap, labelWrap, appState) {
         ? slideIndexOrObj
         : SLIDES[Number(slideIndexOrObj) || 0] || SLIDES[0];
 
-    applyThemeForAct(slide.actNumber);
-    moto.applyAssemblyState(slide.assemblyStage, slide.assemblyProgress);
+    const nextIndex = Math.max(0, SLIDES.indexOf(slide));
+    const immediate = isInitialMount || Boolean(appState.getState().reducedMotion);
+
+    applyThemeForAct(slide.actNumber, { immediate });
+    moto.applyAssemblyState(slide.assemblyStage, slide.assemblyProgress, { immediate });
+    if (!immediate && nextIndex !== previousSlideIndex) {
+      moto.pulseTransition(nextIndex >= previousSlideIndex ? 1 : -1);
+    }
+    previousSlideIndex = nextIndex;
+
     swapChapterProps(slide);
-    animateCameraTo(slide);
+    animateCameraTo(slide, { immediate });
+    isInitialMount = false;
 
     if (slide.id === 'S00' || slide.id === 'S20') {
       moto.pulseHeadlight();
@@ -362,13 +392,14 @@ export function initStage(canvasWrap, labelWrap, appState) {
       moto.tick(dt, elapsed);
       activePropHandle?.update?.(elapsed, dt);
       particles.rotation.y = elapsed * 0.04;
-      moto.root.rotation.y = Math.sin(elapsed * 0.35) * 0.035;
+      moto.root.rotation.y = Math.sin(elapsed * 0.28) * 0.04 + moto.getTransitionYaw();
       underLight.intensity += (1.1 - underLight.intensity) * 0.06;
       camera.lookAt(lookTarget);
       renderer.render(scene, camera);
       css2d.render(scene, camera);
     } else if (needsRender || Math.abs(1.1 - underLight.intensity) > 0.05) {
       underLight.intensity = 1.1;
+      moto.root.rotation.y = 0;
       camera.lookAt(lookTarget);
       renderer.render(scene, camera);
       css2d.render(scene, camera);
@@ -416,6 +447,7 @@ export function initStage(canvasWrap, labelWrap, appState) {
       if (rafId !== null) cancelAnimationFrame(rafId);
       clearTimeout(inspectBannerReset);
       currentCamTween?.kill?.();
+      currentThemeTween?.kill?.();
       resizeObserver?.disconnect?.();
       window.removeEventListener('resize', handleResize);
       activePropHandle?.destroy?.();
