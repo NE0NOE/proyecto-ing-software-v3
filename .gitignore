@@ -1,0 +1,30 @@
+# Repositorio independiente (se mantiene intacto en local / Rpla2-sudo/MREC)
+MREC/
+
+# Estado interno de orquestación de agentes
+.agents/
+
+# Dependencias, compilados temporales y cachés
+**/node_modules/
+**/.vite/
+**/.cache/
+**/playwright-report/
+**/test-results/
+**/*.log
+
+# Secretos y entorno local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.pfx
+*.p12
+.netrc
+confidential/
+secrets/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

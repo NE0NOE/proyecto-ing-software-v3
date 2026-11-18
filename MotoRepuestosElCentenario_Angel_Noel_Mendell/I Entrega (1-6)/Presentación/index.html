@@ -1,0 +1,2918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema de Información Comercial · Moto Repuestos El Centenario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ===== TOKENS DE DISEÑO: ESTILO B · PAPEL ===== */
+    :root {
+      --bg: #e8f1ec;
+      --panel: #14342b;
+      --panel-dark: #0d221c;
+      --panel-card: rgba(232, 241, 236, 0.08);
+      --panel-border: rgba(232, 241, 236, 0.16);
+      --ink: #14221d;
+      --muted: #3d554a; /* Mayor contraste para proyector */
+      --accent: #e0457b;
+      --accent-dark: #9e1b4b; /* Contraste WCAG AAA sobre fondo claro */
+      --accent-light: #f4729f;
+      --accent-soft: rgba(224, 69, 123, 0.14);
+      --gold: #b47a16;
+      --on-panel: #f0f7f3;
+      --on-panel-muted: #a3beb1;
+      
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+      
+      --ease: cubic-bezier(.65, 0, .15, 1);
+      --dur: .82s;
+      --pad: clamp(20px, 3.8vw, 56px);
+      --radius-panel: 24px;
+      --radius-card: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ===== ESTRUCTURA BASE DE SLIDES ===== */
+    .slide {
+      position: fixed;
+      inset: 0;
+      padding: var(--pad);
+      padding-top: clamp(56px, 6.8vh, 76px);
+      padding-bottom: clamp(52px, 6.2vh, 72px);
+      background: var(--bg);
+      visibility: hidden;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+      transition: background 0.3s ease;
+    }
+
+    .slide.active {
+      visibility: visible;
+      pointer-events: auto;
+      z-index: 3;
+    }
+
+    .slide.out {
+      visibility: visible;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ===== MOTOR DE TRANSICIONES (4 VARIANTES CON DIRECCIÓN) ===== */
+    /* 1. WIPE (vertical) */
+    .slide[data-transition="wipe"] {
+      clip-path: inset(100% 0 0 0);
+      transition: clip-path var(--dur) var(--ease);
+    }
+    .slide[data-transition="wipe"].from-next {
+      clip-path: inset(0 0 100% 0);
+    }
+    .slide[data-transition="wipe"].active {
+      clip-path: inset(0 0 0 0);
+    }
+
+    /* 2. PUSH (horizontal con dirección) */
+    .slide[data-transition="push"] {
+      transform: translateX(100%);
+      transition: transform var(--dur) var(--ease), opacity .25s ease;
+      opacity: 0;
+    }
+    .slide[data-transition="push"].from-prev {
+      transform: translateX(100%);
+      opacity: 1;
+    }
+    .slide[data-transition="push"].from-next {
+      transform: translateX(-100%);
+      opacity: 1;
+    }
+    .slide[data-transition="push"].active {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .slide.push-out-left {
+      transform: translateX(-100%);
+      transition: transform var(--dur) var(--ease);
+    }
+    .slide.push-out-right {
+      transform: translateX(100%);
+      transition: transform var(--dur) var(--ease);
+    }
+
+    /* 3. CIRCLE (revelado radial) */
+    .slide[data-transition="circle"] {
+      clip-path: circle(0% at calc(100% - 75px) calc(100% - 35px));
+      transition: clip-path var(--dur) var(--ease);
+    }
+    .slide[data-transition="circle"].from-next {
+      clip-path: circle(0% at 50% 50%);
+    }
+    .slide[data-transition="circle"].active {
+      clip-path: circle(160% at calc(100% - 75px) calc(100% - 35px));
+    }
+    .slide[data-transition="circle"].from-next.active {
+      clip-path: circle(160% at 50% 50%);
+    }
+
+    /* 4. FADE (con zoom suave 1.025 a 1) */
+    .slide[data-transition="fade"] {
+      opacity: 0;
+      transform: scale(1.025);
+      transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+    }
+    .slide[data-transition="fade"].active {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .slide.fade-out {
+      opacity: 0;
+      transition: opacity var(--dur) var(--ease);
+    }
+
+    /* PREFERS REDUCED MOTION */
+    @media (prefers-reduced-motion: reduce) {
+      .slide {
+        transition: opacity 0.12s ease !important;
+        transform: none !important;
+        clip-path: none !important;
+        opacity: 0;
+      }
+      .slide.active { opacity: 1 !important; }
+      .slide.out, .slide.push-out-left, .slide.push-out-right, .slide.fade-out {
+        opacity: 0 !important;
+      }
+    }
+
+    /* ===== ARQUETIPOS DE LAYOUT (CENTRADOS Y PROPORCIONADOS) ===== */
+    /* A) Default: 2 columnas con panel amplio para diagramas e imágenes */
+    .slide.layout-default {
+      display: grid;
+      grid-template-columns: 0.9fr 1.2fr;
+      gap: clamp(16px, 2.2vw, 36px);
+      align-items: center;
+      max-width: min(1400px, 94vw);
+      margin: 0 auto;
+      height: 100%;
+    }
+
+    /* B) Statement: Texto amplio con tipografía editorial y métricas debajo (Slide 3) */
+    .slide.layout-statement {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: min(1240px, 92vw);
+      margin: 0 auto;
+      gap: clamp(12px, 1.8vh, 24px);
+      height: 100%;
+    }
+
+    .statement-card {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(20, 52, 43, 0.16);
+      backdrop-filter: blur(8px);
+    }
+
+    /* C) Cols3: Tres columnas que llenan armoniosamente la pantalla (Slides 4, 5, 6) */
+    .slide.layout-cols3 {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: min(1380px, 94vw);
+      margin: 0 auto;
+      gap: clamp(14px, 2vh, 24px);
+      height: 100%;
+    }
+
+    .cols3-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(16px, 2vw, 28px);
+      align-items: stretch;
+    }
+
+    .cols3-card {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(20, 52, 43, 0.14);
+      border-radius: var(--radius-card);
+      padding: clamp(18px, 2vw, 28px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(10px, 1.4vh, 16px);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 6px 20px rgba(20, 52, 43, 0.05);
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    .cols3-card.dark {
+      background: var(--panel);
+      color: var(--on-panel);
+      border-color: var(--panel-border);
+      box-shadow: 0 10px 30px rgba(20, 52, 43, 0.22);
+    }
+
+    .cols3-card-header {
+      border-bottom: 1px solid rgba(20, 52, 43, 0.12);
+      padding-bottom: 10px;
+    }
+    .cols3-card.dark .cols3-card-header {
+      border-bottom-color: var(--panel-border);
+    }
+
+    /* D) Diagram: Diagrama o tabla a ancho completo (Slides 2, 7, 9) */
+    .slide.layout-diagram {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: min(1380px, 94vw);
+      margin: 0 auto;
+      gap: clamp(12px, 1.8vh, 22px);
+      height: 100%;
+    }
+
+    .diagram-box {
+      background: var(--panel);
+      color: var(--on-panel);
+      border-radius: var(--radius-panel);
+      padding: clamp(18px, 2.2vw, 32px);
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 18px 46px rgba(20, 52, 43, 0.24);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* ===== ELEMENTOS TIPOGRÁFICOS (CALIBRADOS PARA PROYECCIÓN) ===== */
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: clamp(13px, 1.05vw, 15px);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-dark);
+      margin-bottom: 6px;
+    }
+    .eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      font-size: clamp(40px, 4.8vw, 66px);
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      font-size: clamp(30px, 3.6vw, 46px);
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: clamp(20px, 2.1vw, 27px);
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: clamp(15.5px, 1.22vw, 18px);
+      color: var(--muted);
+      line-height: 1.52;
+    }
+
+    .lead {
+      font-size: clamp(17.5px, 1.42vw, 21.5px);
+      color: var(--ink);
+      font-weight: 500;
+      line-height: 1.46;
+    }
+
+    /* Columna izquierda de texto estándar */
+    .txt {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: clamp(8px, 1.1vh, 14px);
+    }
+
+    .txt > * {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .4s ease calc(var(--n, 0) * .05s), transform .4s ease calc(var(--n, 0) * .05s);
+    }
+    .active .txt > * {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Listas y viñetas */
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(5px, 0.9vh, 10px);
+      margin-top: 4px;
+    }
+
+    .bullet-item {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      align-items: start;
+      gap: 12px;
+      font-size: clamp(15px, 1.2vw, 17.5px);
+      color: var(--ink);
+      line-height: 1.46;
+    }
+
+    .bullet-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--panel);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13.5px;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .bullet-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13.5px;
+      font-weight: bold;
+      margin-top: 1px;
+    }
+
+    /* ===== PANEL DERECHO (ESTILO EDITORIAL OSCURO) ===== */
+    .panel {
+      background: var(--panel);
+      color: var(--on-panel);
+      border-radius: var(--radius-panel);
+      height: min(80vh, 660px);
+      padding: clamp(20px, 2.6vw, 34px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 20px 48px -10px rgba(20, 52, 43, 0.28);
+      position: relative;
+      overflow: hidden;
+      transform: scale(.95) translateY(10px);
+      opacity: 0;
+      transition: all .8s var(--ease) .3s;
+    }
+
+    .panel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 92% 10%, rgba(224, 69, 123, 0.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .active .panel {
+      transform: none;
+      opacity: 1;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 10px;
+    }
+
+    .panel-tag {
+      font-family: var(--font-mono);
+      font-size: clamp(12.5px, 0.9vw, 14px);
+      color: var(--accent-light);
+      background: rgba(224, 69, 123, 0.15);
+      padding: 5px 12px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .panel-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    /* Cita editorial Fraunces */
+    .quote {
+      font-family: var(--font-display);
+      font-size: clamp(22px, 2.3vw, 32px);
+      line-height: 1.28;
+      color: var(--on-panel);
+      font-style: italic;
+    }
+
+    .panel-card {
+      background: var(--panel-card);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-card);
+      padding: clamp(14px, 1.5vw, 20px);
+      color: var(--on-panel);
+    }
+
+    .panel-card h4 {
+      font-family: var(--font-display);
+      font-size: clamp(16px, 1.3vw, 19px);
+      margin-bottom: 5px;
+      color: #fff;
+    }
+
+    .panel-card p {
+      font-size: clamp(14px, 1.1vw, 16px);
+      color: var(--on-panel-muted);
+      line-height: 1.48;
+      margin-top: 0;
+    }
+
+    /* Imagen enmarcada */
+    .panel-img-box {
+      width: 100%;
+      height: 100%;
+      max-height: 420px;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--panel-border);
+    }
+    .panel-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .img-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(13,34,28,0.95), rgba(13,34,28,0));
+      padding: 22px 16px 12px 16px;
+      font-size: clamp(13px, 0.95vw, 14.5px);
+      color: var(--on-panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    /* Métricas / Barras animadas */
+    .metric-row {
+      display: grid;
+      grid-template-columns: 220px 1fr 75px;
+      align-items: center;
+      gap: 14px;
+      font-size: clamp(14.5px, 1.15vw, 16.5px);
+      color: var(--on-panel);
+    }
+    .metric-row > span:first-child,
+    .metric-row .metric-val {
+      white-space: nowrap;
+    }
+
+    .track {
+      height: 15px;
+      background: rgba(232, 241, 236, 0.12);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 1.1s var(--ease) calc(.6s + var(--n, 0) * .12s);
+    }
+    .active .fill { width: var(--w); }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: clamp(14px, 1.1vw, 16px);
+      color: var(--accent-light);
+      text-align: right;
+    }
+
+    /* Tablas compactas */
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: clamp(14px, 1.1vw, 16px);
+      text-align: left;
+    }
+
+    .comp-table th {
+      color: var(--accent-light);
+      font-weight: 600;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--panel-border);
+      text-transform: uppercase;
+      font-size: clamp(13px, 0.95vw, 14.5px);
+      letter-spacing: 0.05em;
+    }
+
+    .comp-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(232, 241, 236, 0.08);
+      color: var(--on-panel-muted);
+    }
+
+    .comp-table tr.highlight td {
+      color: #fff;
+      font-weight: 600;
+      background: rgba(224, 69, 123, 0.16);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: clamp(12.5px, 0.9vw, 14px);
+      font-weight: 600;
+    }
+    .badge-win { background: rgba(56, 178, 115, 0.22); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.35); }
+    .badge-no { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.25); }
+
+    /* Bloques de Código */
+    .code-block {
+      background: var(--panel-dark);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: clamp(12px, 0.9vw, 13.5px);
+      line-height: 1.45;
+      color: #e2e8f0;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .code-keyword { color: #f4729f; font-weight: bold; }
+    .code-fn { color: #60a5fa; }
+    .code-str { color: #fde047; }
+    .code-comment { color: #94a3b8; font-style: italic; }
+
+    /* Barra de progreso inferior */
+    .bar {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      height: 4px;
+      background: var(--accent);
+      width: 0%;
+      transition: width var(--dur) var(--ease);
+      z-index: 20;
+    }
+
+    /* Controles superiores e inferiores */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 14px var(--pad);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .brand-badge {
+      font-size: 11.5px;
+      font-family: var(--font-body);
+      background: var(--accent);
+      color: white;
+      padding: 3px 9px;
+      border-radius: 99px;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .slide-indicator {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.7);
+      padding: 4px 12px;
+      border-radius: 99px;
+      border: 1px solid rgba(20, 52, 43, 0.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(20, 52, 43, 0.15);
+      color: var(--ink);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all .2s ease;
+      backdrop-filter: blur(6px);
+    }
+    .btn-icon:hover {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    .bottom-controls {
+      position: fixed;
+      bottom: 14px;
+      right: var(--pad);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 15;
+    }
+
+    .nav-arrow {
+      background: var(--panel);
+      color: var(--on-panel);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 17px;
+      transition: all .2s ease;
+    }
+    .nav-arrow:hover:not(:disabled) {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+    .nav-arrow:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .index-btn {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(20, 52, 43, 0.16);
+      color: var(--ink);
+      padding: 0 16px;
+      height: 40px;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: all .2s ease;
+      backdrop-filter: blur(8px);
+    }
+    .index-btn:hover {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    /* Modales */
+    .index-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 34, 28, 0.72);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease;
+      padding: 20px;
+    }
+    .index-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .index-card {
+      background: var(--bg);
+      border-radius: 22px;
+      width: 100%;
+      max-width: 880px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 30px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      border: 1px solid rgba(20, 52, 43, 0.15);
+    }
+
+    .index-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 11px;
+      margin-top: 20px;
+    }
+
+    .index-item {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(20, 52, 43, 0.12);
+      border-radius: 11px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all .2s ease;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .index-item:hover, .index-item.active {
+      background: var(--panel);
+      color: var(--on-panel);
+      border-color: var(--panel);
+    }
+    .index-item.active .index-num { color: var(--accent-light); }
+    .index-item:hover .index-title, .index-item.active .index-title { color: #fff; }
+    .index-num { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 700; }
+    .index-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+    /* ===== VISTAS ARQUITECTÓNICAS EN 4 CAPAS (SLIDE 8) ===== */
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .arch-layer {
+      background: rgba(232, 241, 236, 0.08);
+      border: 1px solid var(--panel-border);
+      border-radius: 9px;
+      padding: 7px 14px;
+      transition: background 0.2s ease;
+    }
+    .arch-layer.domain {
+      background: rgba(224, 69, 123, 0.22);
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 4px 14px rgba(224, 69, 123, 0.2);
+    }
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .layer-num {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      background: rgba(232, 241, 236, 0.16);
+      color: var(--accent-light);
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .layer-badge-core {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--accent);
+      color: #fff;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .layer-name {
+      font-size: 13.5px;
+      color: #fff;
+      font-weight: 700;
+    }
+    .layer-detail {
+      font-size: 12px;
+      color: var(--on-panel-muted);
+      margin-top: 2px;
+    }
+    .layer-arrow {
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--accent-light);
+      font-family: var(--font-mono);
+      font-weight: 600;
+      line-height: 1.1;
+      padding: 1px 0;
+    }
+    .modules-box {
+      background: var(--panel-dark);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      margin-top: 4px;
+    }
+    .modules-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--accent-light);
+      margin-bottom: 6px;
+    }
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .mod-chip {
+      background: rgba(232, 241, 236, 0.07);
+      border: 1px solid rgba(232, 241, 236, 0.14);
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--on-panel);
+      font-weight: 500;
+    }
+    .mod-chip.core {
+      background: rgba(224, 69, 123, 0.18);
+      border-color: rgba(224, 69, 123, 0.38);
+      color: #fff;
+      font-weight: 600;
+    }
+    .modules-footer {
+      font-size: 11.5px;
+      color: var(--on-panel-muted);
+      margin-top: 6px;
+      text-align: center;
+      border-top: 1px solid rgba(232, 241, 236, 0.08);
+      padding-top: 4px;
+    }
+
+    /* ===== TIMELINE PLAN DE INCREMENTOS & QUALITY GATES (SLIDE 10) ===== */
+    .timeline-container {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .timeline-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .timeline-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: var(--accent-light);
+      font-weight: bold;
+      user-select: none;
+      padding-top: 60px;
+    }
+    .gate-card {
+      background: rgba(232, 241, 236, 0.08);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      min-height: 85px;
+    }
+    .gate-tag {
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent-light);
+      display: block;
+    }
+    .gate-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 2px;
+    }
+    .gate-desc {
+      font-size: 12.5px;
+      color: var(--on-panel-muted);
+      line-height: 1.35;
+      margin-top: 3px;
+    }
+    .timeline-arrow-down {
+      text-align: center;
+      color: var(--accent);
+      font-size: 12px;
+      line-height: 1;
+    }
+    .increment-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(232, 241, 236, 0.16);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .increment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .increment-badge {
+      font-size: 12.5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .increment-ver {
+      font-size: 12px;
+      color: var(--on-panel-muted);
+      font-family: var(--font-mono);
+    }
+    .increment-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 4px;
+    }
+    .increment-desc {
+      font-size: 14px;
+      color: #e2e8f0;
+      line-height: 1.45;
+      margin-top: 4px;
+      flex: 1;
+    }
+    .increment-footer {
+      font-size: 12px;
+      color: var(--on-panel-muted);
+      margin-top: 8px;
+      border-top: 1px solid rgba(232, 241, 236, 0.08);
+      padding-top: 6px;
+    }
+
+    /* ===== DIAGRAMA DE FLUJO CU-VENTA (SLIDE 13) ===== */
+    .cu-flow-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 5px;
+    }
+    .cu-flow-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(20, 52, 43, 0.12);
+      border-radius: 8px;
+      padding: 4px 10px;
+      backdrop-filter: blur(4px);
+    }
+    .cu-step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--on-panel);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .cu-step-info {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .cu-step-info strong {
+      color: var(--ink);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .cu-step-info span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .cu-flow-outcomes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 3px;
+    }
+    .cu-outcome {
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .cu-outcome.commit {
+      background: rgba(74, 222, 128, 0.14);
+      border: 1.5px solid #2da682;
+      color: #14342b;
+    }
+    .cu-outcome.commit .outcome-badge {
+      font-weight: 800;
+      font-size: 12.5px;
+      color: #0d6e4f;
+      font-family: var(--font-mono);
+    }
+    .cu-outcome.rollback {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1.5px solid #ef4444;
+      color: #14342b;
+    }
+    .cu-outcome.rollback .outcome-badge {
+      font-weight: 800;
+      font-size: 12.5px;
+      color: #b91c1c;
+      font-family: var(--font-mono);
+    }
+    .cu-outcome span {
+      font-size: 11.5px;
+      opacity: 0.9;
+    }
+
+    /* ===== MODO OSCURO (CALIBRADO PARA PROYECCIÓN) ===== */
+    body.dark-mode {
+      --bg: #0b1a15;
+      --ink: #e8f1ec;
+      --muted: #96b0a3;
+      --accent: #f4729f;
+      --accent-dark: #fca5c5;
+      --accent-light: #fca5c5;
+      --accent-soft: rgba(244, 114, 159, 0.2);
+      --gold: #fbbf24;
+    }
+
+    body.dark-mode .statement-card,
+    body.dark-mode .cols3-card:not(.dark) {
+      background: #112821;
+      border-color: rgba(232, 241, 236, 0.16);
+      color: #e8f1ec;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    body.dark-mode .cols3-card:not(.dark) .cols3-card-header {
+      border-bottom-color: rgba(232, 241, 236, 0.16);
+    }
+
+    body.dark-mode .bullet-num {
+      background: #183e33;
+      border: 1px solid rgba(232, 241, 236, 0.2);
+      color: #fff;
+    }
+
+    body.dark-mode .bullet-icon {
+      background: rgba(244, 114, 159, 0.2);
+      color: var(--accent-light);
+    }
+
+    body.dark-mode .slide-indicator {
+      background: rgba(20, 52, 43, 0.7);
+      color: #a3beb1;
+      border-color: rgba(232, 241, 236, 0.2);
+    }
+
+    body.dark-mode .btn-icon {
+      background: rgba(20, 52, 43, 0.8);
+      border-color: rgba(232, 241, 236, 0.22);
+      color: #e8f1ec;
+    }
+
+    body.dark-mode .btn-icon:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    body.dark-mode .index-btn {
+      background: rgba(20, 52, 43, 0.85);
+      border-color: rgba(232, 241, 236, 0.22);
+      color: #e8f1ec;
+    }
+
+    body.dark-mode .index-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    body.dark-mode .nav-arrow {
+      background: #183e33;
+      border: 1px solid rgba(232, 241, 236, 0.2);
+      color: #fff;
+    }
+
+    body.dark-mode .nav-arrow:hover:not(:disabled) {
+      background: var(--accent);
+    }
+
+    body.dark-mode .cu-flow-step {
+      background: #112821;
+      border-color: rgba(232, 241, 236, 0.16);
+    }
+
+    body.dark-mode .cu-step-num {
+      background: #183e33;
+      border: 1px solid rgba(232, 241, 236, 0.2);
+      color: #fff;
+    }
+
+    body.dark-mode .cu-step-info strong {
+      color: #e8f1ec;
+    }
+
+    body.dark-mode .cu-step-info span {
+      color: #96b0a3;
+    }
+
+    body.dark-mode .cu-outcome.commit {
+      background: rgba(74, 222, 128, 0.15);
+      border-color: #4ade80;
+      color: #e8f1ec;
+    }
+
+    body.dark-mode .cu-outcome.commit .outcome-badge {
+      color: #4ade80;
+    }
+
+    body.dark-mode .cu-outcome.rollback {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #f87171;
+      color: #e8f1ec;
+    }
+
+    body.dark-mode .cu-outcome.rollback .outcome-badge {
+      color: #f87171;
+    }
+
+    body.dark-mode .cu-outcome span {
+      color: #e8f1ec;
+    }
+
+    body.dark-mode .panel,
+    body.dark-mode .diagram-box {
+      border: 1px solid rgba(232, 241, 236, 0.18);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    body.dark-mode .index-card {
+      background: #0d221c;
+      border-color: rgba(232, 241, 236, 0.2);
+    }
+    body.dark-mode .index-item {
+      background: #112821;
+      border-color: rgba(232, 241, 236, 0.16);
+    }
+    body.dark-mode .index-item .index-title {
+      color: #e8f1ec;
+    }
+    body.dark-mode .help-row {
+      border-bottom-color: rgba(232, 241, 236, 0.14) !important;
+    }
+
+    /* ===== ESTILOS DE IMPRESIÓN / EXPORTACIÓN A PDF (C2) ===== */
+    @media print {
+      @page {
+        size: landscape;
+        margin: 0;
+      }
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        transition: none !important;
+        animation: none !important;
+      }
+      html, body {
+        height: auto !important;
+        width: 100% !important;
+        overflow: visible !important;
+        background: #e8f1ec !important;
+        color: #14221d !important;
+      }
+      .slide {
+        position: relative !important;
+        inset: auto !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        clip-path: none !important;
+        overflow: hidden !important;
+        padding: 36px 48px !important;
+        display: flex !important;
+        box-sizing: border-box !important;
+      }
+      .slide.layout-default {
+        display: grid !important;
+        grid-template-columns: 1.15fr 1fr !important;
+        gap: 36px !important;
+      }
+      .slide.layout-diagram,
+      .slide.layout-statement,
+      .slide.layout-cols3 {
+        display: flex !important;
+      }
+      .panel {
+        opacity: 1 !important;
+        transform: none !important;
+        height: auto !important;
+        min-height: 520px !important;
+      }
+      .fill {
+        width: var(--w) !important;
+      }
+      header.top-bar,
+      footer.bottom-controls,
+      .nav-bar,
+      .bar,
+      .index-modal,
+      .btn-icon,
+      #helpModal,
+      #indexModal {
+        display: none !important;
+      }
+    }
+
+    /* Responsivo básico */
+    @media (max-width: 900px) {
+      .slide.layout-default { grid-template-columns: 1fr; overflow-y: auto; }
+      .cols3-grid { grid-template-columns: 1fr; }
+      .panel { height: auto; min-height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE PROGRESO Y CONTROLES SUPERIORES -->
+  <div class="bar" id="progressBar"></div>
+
+  <header class="top-bar">
+    <div class="brand-title">
+      <span>UNI · DACTIC</span>
+      <span class="brand-badge">Ingeniería de Software</span>
+      <span style="color:var(--muted); font-size:13px; font-weight:normal;">Moto Repuestos El Centenario</span>
+    </div>
+    <div class="top-nav">
+      <div class="slide-indicator" id="slideCount">1 / 14</div>
+      <button class="btn-icon" id="btnTheme" title="Tema: Claro (D) · Clic para alternar" aria-label="Alternar tema claro y oscuro">🌙</button>
+      <button class="btn-icon" id="btnHelp" title="Atajos de teclado (?)">⌨</button>
+      <button class="btn-icon" id="btnFullscreen" title="Pantalla completa (F)">⛶</button>
+    </div>
+  </header>
+
+  <!-- CONTROLES FLOTANTES INFERIORES -->
+  <footer class="bottom-controls">
+    <button class="index-btn" id="btnIndex"><span>📑</span> Índice</button>
+    <button class="nav-arrow" id="btnPrev" title="Anterior (←)">←</button>
+    <button class="nav-arrow" id="btnNext" title="Siguiente (→)">→</button>
+  </footer>
+
+  <!-- MODAL DE ÍNDICE RÁPIDO -->
+  <div class="index-modal" id="indexModal">
+    <div class="index-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span class="eyebrow">Mapa de la Presentación</span>
+          <h2 style="font-size:24px;">Índice General de Diapositivas</h2>
+        </div>
+        <button class="btn-icon" id="btnCloseIndex">✕</button>
+      </div>
+      <div class="index-grid" id="indexGrid"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE AYUDA DE TECLADO -->
+  <div class="index-modal" id="helpModal">
+    <div class="index-card" style="max-width:540px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="font-size:22px;">Atajos de Teclado</h2>
+        <button class="btn-icon" id="btnCloseHelp">✕</button>
+      </div>
+      <div style="margin-top:18px; display:flex; flex-direction:column; gap:12px; font-size:14px;">
+        <div class="help-row" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(20,52,43,0.1); padding-bottom:6px;">
+          <span>Avanzar diapositiva:</span>
+          <span style="font-family:var(--font-mono); font-weight:bold;">→ / ↓ / Espacio / AvPág</span>
+        </div>
+        <div class="help-row" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(20,52,43,0.1); padding-bottom:6px;">
+          <span>Retroceder diapositiva:</span>
+          <span style="font-family:var(--font-mono); font-weight:bold;">← / ↑ / RePág</span>
+        </div>
+        <div class="help-row" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(20,52,43,0.1); padding-bottom:6px;">
+          <span>Modo Oscuro / Claro:</span>
+          <span style="font-family:var(--font-mono); font-weight:bold; color:var(--accent);">D</span>
+        </div>
+        <div class="help-row" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(20,52,43,0.1); padding-bottom:6px;">
+          <span>Abrir índice:</span>
+          <span style="font-family:var(--font-mono); font-weight:bold;">M / I</span>
+        </div>
+        <div class="help-row" style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(20,52,43,0.1); padding-bottom:6px;">
+          <span>Pantalla completa:</span>
+          <span style="font-family:var(--font-mono); font-weight:bold;">F</span>
+        </div>
+        <div class="help-row" style="display:flex; justify-content:space-between; padding-bottom:6px;">
+          <span>Navegación táctil:</span>
+          <span>Deslizar a izquierda / derecha</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SLIDE 1: PORTADA OFICIAL (FADE)
+       ======================================================== -->
+  <section class="slide layout-default" data-transition="fade" data-title="Portada Oficial">
+    <div class="txt">
+      <div class="eyebrow" style="--n:0">Caso de Estudio · Ingeniería de Software</div>
+      <h1 style="--n:1">Sistema de Información Comercial</h1>
+      <p class="lead" style="--n:2; margin-top:8px;">
+        Distribuidora Comercial <strong>"Moto Repuestos El Centenario"</strong>
+      </p>
+      <p style="--n:3">
+        Defensa técnica integral de base de datos relacional, especificación formal de requerimientos, arquitectura modular web, ciclo de vida incremental y diseño detallado del sistema.
+      </p>
+      
+      <div style="--n:4; display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
+        <div class="cols3-card" style="padding:16px 18px;">
+          <span style="font-size:13px; font-weight:700; text-transform:uppercase; color:var(--muted); letter-spacing:0.06em;">Institución</span>
+          <span style="font-weight:700; font-size:16.5px; color:var(--ink);">UNI · DACTIC</span>
+          <span style="font-size:14px; color:var(--muted);">Ingeniería en Computación · 4S1-COM-S</span>
+        </div>
+        <div class="cols3-card" style="padding:16px 18px;">
+          <span style="font-size:13px; font-weight:700; text-transform:uppercase; color:var(--muted); letter-spacing:0.06em;">Docente</span>
+          <span style="font-weight:700; font-size:16.5px; color:var(--ink);">Ing. Roberto Alfaro</span>
+        </div>
+      </div>
+
+      <div style="--n:5; font-size:15px; color:var(--muted); margin-top:10px;">
+        <strong>Equipo Expositor:</strong> Ángel Alonso Suárez · Noel Alemán Carballo · Mendell Parrales Molina
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-tag">Defensa Técnica 2026</span>
+        <span style="font-size:13px; color:var(--on-panel-muted);">Managua, Nicaragua</span>
+      </div>
+      <div class="panel-body">
+        <div class="panel-img-box">
+          <img src="assets/moto_repuestos_hero.jpg" alt="Moto Repuestos El Centenario" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="img-fallback-box" style="display:none; height:100%; min-height:220px; background:var(--panel-dark); border-radius:12px; align-items:center; justify-content:center; flex-direction:column; padding:24px; text-align:center; border:1px solid var(--panel-border);">
+            <div style="font-size:32px; margin-bottom:8px;">🏍️</div>
+            <h3 style="font-size:18px; color:var(--on-panel); font-family:var(--font-display);">Moto Repuestos El Centenario</h3>
+            <p style="font-size:13.5px; color:var(--on-panel-muted); margin-top:4px;">Distribuidora Comercial · Managua, Nicaragua</p>
+          </div>
+          <div class="img-caption">
+            <span><strong>Comercializadora de Repuestos y Consumibles</strong><br>Marcas: Yamaha, TVS, AKT, Genesis, Serpento, RK, CR</span>
+            <span class="badge badge-win" style="font-size:13px; padding:4px 10px;">Operación LAN 100%</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:13px; color:var(--on-panel-muted); display:flex; justify-content:space-between; align-items:center;">
+        <span>Estándares ISO/IEC/IEEE & SWEBOK</span>
+        <span style="color:var(--accent-light); font-weight:600;">Presione [→] para iniciar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 2: FLUJO DE ETAPAS DEL TRABAJO (WIPE)
+       ======================================================== -->
+  <section class="slide layout-diagram" data-transition="wipe" data-title="Flujo de Etapas del Trabajo">
+    <div class="diagram-header">
+      <div class="eyebrow">Ruta Metodológica · 6 Documentos Fuente Consolidados</div>
+      <h2>Flujo de Etapas de Ingeniería del Proyecto</h2>
+      <p class="lead" style="margin-top:4px;">
+        El compendio consolida una línea base ininterrumpida de 6 etapas formales de ingeniería de software:
+      </p>
+    </div>
+
+    <div class="diagram-box" style="padding:clamp(18px, 2.2vw, 30px);">
+      <!-- SVG FLUIDO CON 6 ETAPAS CONCATENADAS Y FLECHAS CON DEFINICIÓN DE MARKER -->
+      <svg viewBox="0 0 940 220" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#e0457b"/>
+          </marker>
+        </defs>
+
+        <!-- FILA 1: ETAPAS 1, 2, 3 -->
+        <!-- Etapa 1 -->
+        <rect x="15" y="10" width="270" height="78" rx="12" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.4"/>
+        <text x="32" y="34" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">ETAPA 1 · SABD</text>
+        <text x="32" y="55" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="15.5">Base de Datos Relacional</text>
+        <text x="32" y="75" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">PostgreSQL 16 · 3FN · Triggers & SPs</text>
+
+        <!-- Flecha 1 -> 2 -->
+        <line x1="285" y1="49" x2="325" y2="49" stroke="#e0457b" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+        <!-- Etapa 2 -->
+        <rect x="335" y="10" width="270" height="78" rx="12" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.4"/>
+        <text x="352" y="34" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">ETAPA 2 · ISO 29148</text>
+        <text x="352" y="55" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="15.5">Ingeniería de Requisitos</text>
+        <text x="352" y="75" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">StRS · SyRS · SRS & Reglas RN-01..15</text>
+
+        <!-- Flecha 2 -> 3 -->
+        <line x1="605" y1="49" x2="645" y2="49" stroke="#e0457b" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+        <!-- Etapa 3 -->
+        <rect x="655" y="10" width="270" height="78" rx="12" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.4"/>
+        <text x="672" y="34" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">ETAPA 3 · ISO 42010</text>
+        <text x="672" y="55" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="15.5">Arquitectura de Software</text>
+        <text x="672" y="75" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">Monolito Modular Web en 4 Capas</text>
+
+        <!-- Conector Curvo Fila 1 a Fila 2 -->
+        <path d="M 790 88 C 790 114, 150 102, 150 120" fill="none" stroke="#e0457b" stroke-width="2.2" stroke-dasharray="5,5"/>
+
+        <!-- FILA 2: ETAPAS 4, 5, 6 -->
+        <!-- Etapa 4 -->
+        <rect x="15" y="125" width="270" height="78" rx="12" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.4"/>
+        <text x="32" y="149" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">ETAPA 4 · ISO 12207</text>
+        <text x="32" y="170" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="15.5">Metodología de Desarrollo</text>
+        <text x="32" y="190" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">Plan I1..I4 & Puertas G0..G3</text>
+
+        <!-- Flecha 4 -> 5 -->
+        <line x1="285" y1="164" x2="325" y2="164" stroke="#e0457b" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+        <!-- Etapa 5 -->
+        <rect x="335" y="125" width="270" height="78" rx="12" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.4"/>
+        <text x="352" y="149" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">ETAPA 5 · LM-MREC</text>
+        <text x="352" y="170" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="15.5">Lenguaje de Modelado</text>
+        <text x="352" y="190" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">UML 2.5.1 Selectivo (7 Diagramas)</text>
+
+        <!-- Flecha 5 -> 6 -->
+        <line x1="605" y1="164" x2="645" y2="164" stroke="#e0457b" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+        <!-- Etapa 6 -->
+        <rect x="655" y="125" width="270" height="78" rx="12" fill="#245849" stroke="#e0457b" stroke-width="1.8"/>
+        <text x="672" y="149" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">ETAPA 6 · DD-MREC</text>
+        <text x="672" y="170" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="15.5">Documentación de Diseño</text>
+        <text x="672" y="190" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">Casos de Uso, Clases & Secuencias</text>
+      </svg>
+    </div>
+
+    <!-- 6 TARJETAS AMPLIADAS Y LEGIBLES -->
+    <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:12px; margin-top:4px;">
+      <div class="cols3-card" style="padding:13px 15px;">
+        <strong style="color:var(--ink); font-size:15px;">1. SABD</strong>
+        <span style="color:var(--muted); font-size:13.5px; line-height:1.4;">Modelo 3FN físico y lógica PostgreSQL</span>
+      </div>
+      <div class="cols3-card" style="padding:13px 15px;">
+        <strong style="color:var(--ink); font-size:15px;">2. Requisitos</strong>
+        <span style="color:var(--muted); font-size:13.5px; line-height:1.4;">StRS, SyRS, SRS y matriz RTM</span>
+      </div>
+      <div class="cols3-card" style="padding:13px 15px;">
+        <strong style="color:var(--ink); font-size:15px;">3. Arquitectura</strong>
+        <span style="color:var(--muted); font-size:13.5px; line-height:1.4;">Monolito modular y 4 capas</span>
+      </div>
+      <div class="cols3-card" style="padding:13px 15px;">
+        <strong style="color:var(--ink); font-size:15px;">4. Metodología</strong>
+        <span style="color:var(--muted); font-size:13.5px; line-height:1.4;">Incremental I1..I4 y Quality Gates</span>
+      </div>
+      <div class="cols3-card" style="padding:13px 15px;">
+        <strong style="color:var(--ink); font-size:15px;">5. Modelado</strong>
+        <span style="color:var(--muted); font-size:13.5px; line-height:1.4;">Contrato de 7 modelos UML 2.5.1</span>
+      </div>
+      <div class="cols3-card" style="padding:13px 15px;">
+        <strong style="color:var(--ink); font-size:15px;">6. Diseño</strong>
+        <span style="color:var(--muted); font-size:13.5px; line-height:1.4;">Dinámica ACID, estados y LAN</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 3: HISTORIA DE LA EMPRESA & OBJETIVOS (FADE · STATEMENT)
+       ======================================================== -->
+  <section class="slide layout-statement" data-transition="fade" data-title="Historia de la Empresa">
+    <div>
+      <div class="eyebrow">Entorno del Negocio & Diagnóstico Operativo</div>
+      <h2>Historia de la Empresa & Planteamiento del Problema</h2>
+    </div>
+
+    <div class="panel-card statement-card" style="padding:clamp(16px, 2vw, 26px); border-radius:18px;">
+      <div class="quote" style="color:var(--ink); font-size:clamp(22px, 2.3vw, 32px); font-weight:600; line-height:1.26;">
+        “La búsqueda de piezas dependía de la memoria del operario y las ventas se anotaban en papel sin control de existencias.”
+      </div>
+      <p style="margin-top:10px; font-size:clamp(15px, 1.15vw, 17.5px); color:var(--muted); line-height:1.5;">
+        <strong>Moto Repuestos El Centenario</strong> fue fundada en el año <strong>2020</strong> por <strong>Alejandra Alemán</strong> en Managua, Nicaragua. Entidad dedicada a la comercialización minorista de piezas mecánicas y consumibles para motocicletas de alta circulación (Yamaha, TVS, AKT, Serpento, Genesis, RK, CR) bajo calidades <strong>A, AA y AAA</strong>. La operación previa mediante bitácoras físicas provocaba desabastecimiento, falta de control en márgenes y demoras críticas en mostrador.
+      </p>
+    </div>
+
+    <div>
+      <h3 style="font-size:clamp(18px, 1.6vw, 22px); margin-bottom:10px; color:var(--ink);">Objetivos del sistema</h3>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+        <div class="cols3-card" style="border-left:5px solid var(--accent); padding:clamp(14px, 1.6vw, 20px);">
+          <span style="font-family:var(--font-mono); font-size:13px; color:var(--accent); font-weight:700;">OBJETIVO 01</span>
+          <strong style="font-size:16.5px; color:var(--ink); margin-top:2px;">Control de Stock</strong>
+          <p style="font-size:14.5px; margin-top:4px; line-height:1.44;">Garantizar certeza del 100% en existencias físicas en tiempo real y bloqueo estricto de saldos negativos.</p>
+        </div>
+        <div class="cols3-card" style="border-left:5px solid #2da682; padding:clamp(14px, 1.6vw, 20px);">
+          <span style="font-family:var(--font-mono); font-size:13px; color:#2da682; font-weight:700;">OBJETIVO 02</span>
+          <strong style="font-size:16.5px; color:var(--ink); margin-top:2px;">Tiempo de Búsqueda</strong>
+          <p style="font-size:14.5px; margin-top:4px; line-height:1.44;">Localización unificada por código, texto y compatibilidad de moto en tiempo P95 ≤ 3 segundos.</p>
+        </div>
+        <div class="cols3-card" style="border-left:5px solid var(--gold); padding:clamp(14px, 1.6vw, 20px);">
+          <span style="font-family:var(--font-mono); font-size:13px; color:var(--gold); font-weight:700;">OBJETIVO 03</span>
+          <strong style="font-size:16.5px; color:var(--ink); margin-top:2px;">Resguardo de Datos</strong>
+          <p style="font-size:14.5px; margin-top:4px; line-height:1.44;">Cero pérdidas de transacciones comerciales mediante Kardex inmutable y recuperación RPO ≤ 24h.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 4: REQUISITOS DEL USUARIO - StRS (CIRCLE · COLS3)
+       ======================================================== -->
+  <section class="slide layout-cols3" data-transition="circle" data-title="Requerimientos del Usuario">
+    <div>
+      <div class="eyebrow">ISO/IEC/IEEE 29148:2011 · Partes Interesadas</div>
+      <h2>Levantamiento de Requisitos: Del Usuario (StRS)</h2>
+      <p class="lead" style="margin-top:4px;">
+        Expectativas operacionales de la propietaria, vendedores, cajeros y bodegueros organizadas por frente de trabajo:
+      </p>
+    </div>
+
+    <div class="cols3-grid">
+      <!-- Columna 1 -->
+      <div class="cols3-card">
+        <div class="cols3-card-header">
+          <span class="badge badge-win" style="font-size:12px; padding:3px 9px;">Mostrador POS</span>
+          <h4 style="margin-top:6px; font-size:17px; color:var(--ink);">Búsqueda & Existencias</h4>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">✓</div>
+          <div><strong>ST-REQ-001 (Búsqueda Unificada):</strong> Consulta simultánea por código, descripción y compatibilidad vehicular con P95 ≤ 3s.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">✓</div>
+          <div><strong>ST-REQ-002 (Certeza de Stock):</strong> El terminal POS bloquea la inclusión de artículos sin existencias físicas disponibles.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">✓</div>
+          <div><strong>ST-REQ-003 (Cotización Dinámica):</strong> Conversión fluida de presupuestos a facturas vigentes sin recaptura de ítems.</div>
+        </div>
+      </div>
+
+      <!-- Columna 2 -->
+      <div class="cols3-card">
+        <div class="cols3-card-header">
+          <span class="badge badge-win" style="font-size:12px; padding:3px 9px;">Caja & Bodega</span>
+          <h4 style="margin-top:6px; font-size:17px; color:var(--ink);">Liquidación & Entradas</h4>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">✓</div>
+          <div><strong>ST-REQ-004 (Cobro Multimedio):</strong> Liquidación mixta (efectivo y tarjeta) con verificación exacta del total adeudado.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">✓</div>
+          <div><strong>ST-REQ-005 (Compras & Bodega):</strong> Recepción de mercancía con impacto atómico inmediato en almacén y Kardex.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">✓</div>
+          <div><strong>ST-REQ-012 (Control de Caja):</strong> Apertura con fondo inicial, arqueo de turno y justificación obligatoria de descuadres.</div>
+        </div>
+      </div>
+
+      <!-- Columna 3 -->
+      <div class="cols3-card dark">
+        <div class="cols3-card-header">
+          <span class="panel-tag">Reglas Esenciales</span>
+          <h4 style="margin-top:6px; font-size:17px; color:#fff;">Gobernanza RN-01..15</h4>
+        </div>
+        <div style="font-size:14px; line-height:1.52; display:flex; flex-direction:column; gap:10px;">
+          <div><strong style="color:var(--accent-light);">RN-01 (Stock No Negativo):</strong> Restricción física en base de datos. Ninguna venta puede generar saldo menor a cero.</div>
+          <div><strong style="color:var(--accent-light);">RN-02 (Kardex Inmutable):</strong> Registro cronológico imborrable. Ajustes solo por transacciones compensatorias.</div>
+          <div><strong style="color:var(--accent-light);">RN-07 (Venta Atómica ACID):</strong> Factura, líneas, pagos y Kardex se confirman como una sola unidad indivisible.</div>
+          <div><strong style="color:var(--accent-light);">RN-11 (Segregación RBAC):</strong> Vendedores no pueden modificar costos ni autoaprobar anulaciones.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 5: REQUISITOS DEL SOFTWARE - SRS (PUSH · COLS3)
+       ======================================================== -->
+  <section class="slide layout-cols3" data-transition="push" data-title="Requerimientos del Software">
+    <div>
+      <div class="eyebrow">Especificación Formal · SRS & Trazabilidad RTM</div>
+      <h2>Levantamiento de Requisitos: Del Software (SRS)</h2>
+      <p class="lead" style="margin-top:4px;">
+        Capacidades técnicas modulares con verificación síncrona y matriz de trazabilidad bidireccional:
+      </p>
+    </div>
+
+    <div class="cols3-grid">
+      <!-- Columna 1 -->
+      <div class="cols3-card">
+        <div class="cols3-card-header">
+          <span class="badge badge-win" style="font-size:12px; padding:3px 9px;">Módulos Core</span>
+          <h4 style="margin-top:6px; font-size:17px; color:var(--ink);">Acceso & Catálogo</h4>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">1</div>
+          <div><strong>SRS-AUT (Autenticación):</strong> Cuentas individuales seguras, control de sesiones y asignación de privilegios RBAC.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">2</div>
+          <div><strong>SRS-CAT (Catálogo & Compatibilidad):</strong> Normalización de marcas, modelos y rangos de compatibilidad vehicular (año desde ≤ año hasta).</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">3</div>
+          <div><strong>SRS-COM (Compras):</strong> Recepción atómica y cálculo de costo promedio ponderado de adquisición.</div>
+        </div>
+      </div>
+
+      <!-- Columna 2 -->
+      <div class="cols3-card">
+        <div class="cols3-card-header">
+          <span class="badge badge-win" style="font-size:12px; padding:3px 9px;">Consistencia</span>
+          <h4 style="margin-top:6px; font-size:17px; color:var(--ink);">Inventario & Venta POS</h4>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">4</div>
+          <div><strong>SRS-INV (Kardex & Concurrencia):</strong> Materialización de saldo con bloqueo a nivel de fila y semaforización de stock mínimo.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">5</div>
+          <div><strong>SRS-VNT (Venta ACID):</strong> Modo borrador sin reserva previa, cálculo de totales en servidor y confirmación de 1 paso.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">6</div>
+          <div><strong>SRS-CAJ (Turnos de Caja):</strong> Verificación estricta de turno abierto antes de permitir cobros en mostrador.</div>
+        </div>
+      </div>
+
+      <!-- Columna 3 -->
+      <div class="cols3-card dark">
+        <div class="cols3-card-header">
+          <span class="panel-tag">Matriz RTM</span>
+          <h4 style="margin-top:6px; font-size:17px; color:#fff;">Trazabilidad Total</h4>
+        </div>
+        <table class="comp-table" style="font-size:13.5px; margin-top:6px;">
+          <thead>
+            <tr><th>StRS</th><th>SyRS Derivado</th><th>Módulo SRS</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ST-REQ-001</td><td>SYS-FN-003/PR-001</td><td>SRS-CAT-001..004</td></tr>
+            <tr class="highlight"><td>ST-REQ-002</td><td>SYS-FN-010/US-002</td><td>SRS-INV-002/005</td></tr>
+            <tr><td>ST-REQ-004</td><td>SYS-FN-014..018</td><td>SRS-VNT-001..008</td></tr>
+            <tr class="highlight"><td>ST-REQ-010</td><td>SYS-SC-006..010</td><td>SRS-AUD-001/002</td></tr>
+            <tr><td>ST-REQ-013</td><td>SYS-FN-027/PR-007</td><td>SRS-BKP-001..003</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:12.5px; color:var(--on-panel-muted); margin-top:8px;">
+          Cobertura del 100%: ningún requisito queda sin caso de prueba verificable.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 6: REQUISITOS DEL SISTEMA - SyRS (PUSH · COLS3)
+       ======================================================== -->
+  <section class="slide layout-cols3" data-transition="push" data-title="Requerimientos del Sistema">
+    <div>
+      <div class="eyebrow">ISO/IEC 25010:2011 · Límites de Ingeniería</div>
+      <h2>Levantamiento de Requisitos: Del Sistema (SyRS)</h2>
+      <p class="lead" style="margin-top:4px;">
+        Entorno físico de operación, acuerdos de nivel de servicio (SLA) y atributos de calidad:
+      </p>
+    </div>
+
+    <div class="cols3-grid">
+      <!-- Columna 1 -->
+      <div class="cols3-card">
+        <div class="cols3-card-header">
+          <span class="badge badge-win" style="font-size:12px; padding:3px 9px;">Rendimiento P95</span>
+          <h4 style="margin-top:6px; font-size:17px; color:var(--ink);">Tiempos de Respuesta</h4>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">⚡</div>
+          <div><strong>Consulta de Catálogo (SYS-PR-001):</strong> Latencia P95 ≤ 3s bajo carga simultánea de 10 usuarios concurrentes.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">⚡</div>
+          <div><strong>Confirmación de Venta (SYS-PR-002):</strong> Liquidación transaccional de hasta 20 líneas en P95 ≤ 5s.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">⚡</div>
+          <div><strong>Lectura de Código de Barras:</strong> Reconocimiento USB y renderizado en pantalla en ≤ 1s.</div>
+        </div>
+      </div>
+
+      <!-- Columna 2 -->
+      <div class="cols3-card">
+        <div class="cols3-card-header">
+          <span class="badge badge-win" style="font-size:12px; padding:3px 9px;">Seguridad & Datos</span>
+          <h4 style="margin-top:6px; font-size:17px; color:var(--ink);">Integridad Criptográfica</h4>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">🔒</div>
+          <div><strong>Autenticación Criptográfica (SYS-SC):</strong> Hashing con sal única y bloqueo temporal de cuenta tras 5 intentos fallidos.</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">🔒</div>
+          <div><strong>Precisión Monetaria (SYS-GI):</strong> Almacenamiento en tipo decimal de 2 decimales fijos (prohibición de floats binarios).</div>
+        </div>
+        <div class="bullet-item">
+          <div class="bullet-icon">🔒</div>
+          <div><strong>Auditoría Inmutable:</strong> Registro síncrono en bitácora de quién, cuándo y qué se modificó.</div>
+        </div>
+      </div>
+
+      <!-- Columna 3 -->
+      <div class="cols3-card dark">
+        <div class="cols3-card-header">
+          <span class="panel-tag">Entorno & SLA</span>
+          <h4 style="margin-top:6px; font-size:17px; color:#fff;">Infraestructura Local</h4>
+        </div>
+        <div style="font-size:14px; line-height:1.52; display:flex; flex-direction:column; gap:10px;">
+          <div><strong style="color:var(--accent-light);">Capacidad:</strong> 4 terminales POS concurrentes, 10 operadores y hasta 20,000 repuestos.</div>
+          <div><strong style="color:var(--accent-light);">Disponibilidad:</strong> ≥ 99.5% en horario comercial sobre red cableada LAN.</div>
+          <div><strong style="color:var(--accent-light);">Autonomía Eléctrica:</strong> Respaldo por UPS de ≥ 15 min en cajas y servidor local.</div>
+          <div><strong style="color:var(--accent-light);">Recuperación Crítica:</strong> Backups diarios cifrados cumpliendo RPO ≤ 24h y RTO ≤ 4h.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 7: ARQUITECTURA DE SOFTWARE (CIRCLE · DIAGRAM)
+       ======================================================== -->
+  <section class="slide layout-diagram" data-transition="circle" data-title="Arquitectura de Software">
+    <div class="diagram-header">
+      <div class="eyebrow">ISO/IEC/IEEE 42010:2022 · Selección Arquitectónica</div>
+      <h2>Arquitectura de Software: Evaluación de Alternativas</h2>
+      <p class="lead" style="margin-top:4px;">
+        Evaluación ponderada multicriterio contrastando tres estilos arquitectónicos para el caso de estudio:
+      </p>
+    </div>
+
+    <div class="diagram-box" style="padding:clamp(20px, 2.4vw, 32px);">
+      <!-- 3 ALTERNATIVAS CON TEXTO MÁS GRANDE Y ESPACIOSO -->
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:18px;">
+        <div class="panel-card" style="border-left:4px solid rgba(232,241,236,0.3); padding:16px 18px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent-light); font-family:var(--font-mono);">ALTERNATIVA 1</div>
+          <h4 style="font-size:17.5px; margin-top:4px;">Monolito Tradicional</h4>
+          <p style="font-size:14.5px; line-height:1.48; margin-top:6px;">Capas acopladas sobre un esquema relacional común; despliegue simple pero con alto riesgo de degradación del código y dependencias cruzadas.</p>
+        </div>
+
+        <div class="panel-card" style="border:2px solid var(--accent); background:rgba(224,69,123,0.16); padding:16px 18px;">
+          <div style="font-size:13px; font-weight:700; color:#4ade80; font-family:var(--font-mono);">ALTERNATIVA 2 (SELECCIONADA)</div>
+          <h4 style="font-size:17.5px; margin-top:4px; color:#fff;">Monolito Modular Web</h4>
+          <p style="font-size:14.5px; line-height:1.48; margin-top:6px; color:#e8f1ec;">Módulos de negocio soberanos con transacciones ACID nativas y contratos explícitos; elimina sobrecostos de red e infraestructura distribuida.</p>
+        </div>
+
+        <div class="panel-card" style="border-left:4px solid rgba(232,241,236,0.3); padding:16px 18px;">
+          <div style="font-size:13px; font-weight:700; color:var(--accent-light); font-family:var(--font-mono);">ALTERNATIVA 3</div>
+          <h4 style="font-size:17.5px; margin-top:4px;">Microservicios Distribuidos</h4>
+          <p style="font-size:14.5px; line-height:1.48; margin-top:6px;">Servicios independientes en red; descartado por sobrecarga de orquestación, latencia en LAN y riesgo de consistencia eventual en stock.</p>
+        </div>
+      </div>
+
+      <!-- BARRAS ANIMADAS MÁS ALTAS Y LEGIBLES (ORDENADAS POR PUNTAJE, SIN NÚMEROS CONFUSOS) -->
+      <div style="display:flex; flex-direction:column; gap:12px; border-top:1px solid var(--panel-border); padding-top:16px;">
+        <div>
+          <div class="metric-row">
+            <span style="font-weight:700; color:#4ade80; font-size:16px;">Monolito Modular Web</span>
+            <div class="track" style="height:15px;"><div class="fill" style="--w:96%;--n:0; background:#4ade80;"></div></div>
+            <span class="metric-val" style="color:#4ade80; font-weight:bold; font-size:16px;">96 / 100</span>
+          </div>
+          <span style="font-size:13px; color:var(--on-panel-muted); display:block; margin-top:3px; margin-left:234px;">Máximo balance: ACID local, alta cohesión y bajo costo de mantenimiento.</span>
+        </div>
+
+        <div>
+          <div class="metric-row">
+            <span style="font-size:15px;">Microservicios Distribuidos</span>
+            <div class="track" style="height:15px;"><div class="fill" style="--w:74%;--n:1;"></div></div>
+            <span class="metric-val" style="font-size:15px;">74 / 100</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="metric-row">
+            <span style="font-size:15px;">Monolito Tradicional</span>
+            <div class="track" style="height:15px;"><div class="fill" style="--w:72%;--n:2;"></div></div>
+            <span class="metric-val" style="font-size:15px;">72 / 100</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13.5px; color:var(--on-panel-muted); border-top:1px solid rgba(232,241,236,0.1); padding-top:10px;">
+        <span><strong>Principio PA-02:</strong> Dependencias estrictas hacia el dominio</span>
+        <span style="color:var(--accent-light);"><strong>Principio PA-06:</strong> Autonomía LAN al 100% sin depender de Internet</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 8: VISTAS ARQUITECTÓNICAS EN 4 CAPAS (PUSH)
+       ======================================================== -->
+  <section class="slide layout-default" data-transition="push" data-title="Vistas Arquitectónicas">
+    <div class="txt">
+      <div class="eyebrow" style="--n:0">Estructura Lógica Concéntrica</div>
+      <h2 style="--n:1">Vistas y Capas Arquitectónicas</h2>
+      <p style="--n:2">
+        Organización en <strong>4 capas desacopladas</strong> donde las dependencias apuntan siempre hacia el dominio (Principio PA-02):
+      </p>
+
+      <ul class="bullet-list" style="--n:3">
+        <li class="bullet-item">
+          <div class="bullet-num">1</div>
+          <div><strong>Presentación Web:</strong> Controladores POS, vistas de mostrador, bodega, caja y reportería ejecutiva.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">2</div>
+          <div><strong>Aplicación:</strong> Coordinadores de casos de uso, transacciones ACID y control RBAC.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">3</div>
+          <div><strong>Dominio:</strong> Entidades puras (Producto, Factura, Kardex), reglas e invariantes matemáticas.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">4</div>
+          <div><strong>Infraestructura:</strong> Adaptadores PostgreSQL, repositorios relacionales, bitácora y ESC/POS.</div>
+        </li>
+      </ul>
+
+      <p style="--n:4; font-size:14px; margin-top:8px;">
+        <strong>7 Módulos Soberanos:</strong> Identidad, Catálogo, Compras, Inventario, Ventas, Caja y Reportería. Ningún módulo consulta directamente tablas de otro módulo.
+      </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-tag">Vista Lógica V-02 (M-CMP-01)</span>
+        <span style="font-size:13px; color:var(--accent-light);">Monolito Modular · 4 Capas</span>
+      </div>
+      <div class="panel-body" style="display:flex; flex-direction:column; justify-content:space-between; gap:6px;">
+        <!-- 4 CAPAS APILADAS CON DIRECCIÓN DE DEPENDENCIAS -->
+        <div class="layer-stack">
+          <!-- CAPA 1: PRESENTACIÓN -->
+          <div class="arch-layer">
+            <div class="layer-header">
+              <span class="layer-num">1</span>
+              <strong class="layer-name">Capa de Presentación Web</strong>
+            </div>
+            <div class="layer-detail">POS Mostrador · Bodega · Caja · Administración · Reportería</div>
+          </div>
+
+          <div class="layer-arrow">↓ Invoca Casos de Uso</div>
+
+          <!-- CAPA 2: APLICACIÓN -->
+          <div class="arch-layer">
+            <div class="layer-header">
+              <span class="layer-num">2</span>
+              <strong class="layer-name">Capa de Aplicación</strong>
+            </div>
+            <div class="layer-detail">Coordinación CU · Delimitación Transaccional ACID · Seguridad RBAC</div>
+          </div>
+
+          <div class="layer-arrow">↓ Depende de Contratos de Dominio (PA-02)</div>
+
+          <!-- CAPA 3: DOMINIO (NÚCLEO) -->
+          <div class="arch-layer domain">
+            <div class="layer-header">
+              <span class="layer-badge-core">NÚCLEO</span>
+              <strong class="layer-name">Capa de Dominio</strong>
+            </div>
+            <div class="layer-detail" style="color:#e8f1ec;">Entidades Puras (Producto, Factura, Kardex, Proveedor) · Invariantes</div>
+          </div>
+
+          <div class="layer-arrow">↑ Implementa Interfaces & Adaptadores (PA-02)</div>
+
+          <!-- CAPA 4: INFRAESTRUCTURA -->
+          <div class="arch-layer">
+            <div class="layer-header">
+              <span class="layer-num">4</span>
+              <strong class="layer-name">Capa de Infraestructura</strong>
+            </div>
+            <div class="layer-detail">Persistencia PostgreSQL 16 · Repositorios · Bitácora · ESC/POS · PDF</div>
+          </div>
+        </div>
+
+        <!-- 7 MÓDULOS SOBERANOS -->
+        <div class="modules-box">
+          <div class="modules-title">
+            <span>7 MÓDULOS SOBERANOS DESACOPLADOS</span>
+            <span class="badge badge-win" style="font-size:12px; padding:2px 7px;">PA-02</span>
+          </div>
+          <div class="modules-grid">
+            <div class="mod-chip">Identidad</div>
+            <div class="mod-chip">Catálogo</div>
+            <div class="mod-chip">Compras</div>
+            <div class="mod-chip core">Inventario</div>
+            <div class="mod-chip core">Ventas</div>
+            <div class="mod-chip">Caja</div>
+            <div class="mod-chip">Reportería</div>
+          </div>
+          <div class="modules-footer">
+            ▲ Dependencias hacia Dominio · Cero llamadas directas entre esquemas
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; color:var(--on-panel-muted);">
+        Aislamiento de persistencia y dependencias hacia interfaces de dominio.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 9: METODOLOGÍA DE DESARROLLO (CIRCLE · DIAGRAM)
+       ======================================================== -->
+  <section class="slide layout-diagram" data-transition="circle" data-title="Metodología de Desarrollo">
+    <div class="diagram-header">
+      <div class="eyebrow">SWEBOK v4.0a · ISO/IEC/IEEE 12207:2017</div>
+      <h2>Metodología de Desarrollo: Ciclo de Vida Seleccionado</h2>
+      <p class="lead" style="margin-top:4px;">
+        Evaluación formal de modelos de desarrollo y justificación del descarte explícito de marcos inadecuados:
+      </p>
+    </div>
+
+    <div class="diagram-box" style="padding:clamp(18px, 2.2vw, 30px);">
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:18px; align-items:start;">
+        <!-- TABLA COMPARATIVA CON ENTREGA TEMPRANA CORREGIDA (ESPIRAL: ALTA 4/5) -->
+        <div>
+          <h4 style="font-size:14px; margin-bottom:8px; color:#fff;">Evaluación Comparativa de Modelos (MET-MREC-001)</h4>
+          <table class="comp-table">
+            <thead>
+              <tr><th>Modelo Evaluado</th><th>Puntaje</th><th>Entrega Temprana</th><th>Veredicto</th></tr>
+            </thead>
+            <tbody>
+              <tr class="highlight">
+                <td><strong>Incremental Controlado</strong></td>
+                <td><strong>88 / 100</strong></td>
+                <td>Muy Alta (5/5)</td>
+                <td><span class="badge badge-win">Seleccionado</span></td>
+              </tr>
+              <tr>
+                <td>Proceso Unificado (UP/RUP)</td>
+                <td>79 / 100</td>
+                <td>Alta (4/5)</td>
+                <td><span class="badge badge-no">Sobrepeso doc.</span></td>
+              </tr>
+              <tr>
+                <td>Modelo Espiral</td>
+                <td>78 / 100</td>
+                <td>Alta (4/5)</td>
+                <td><span class="badge badge-no">Costo analítico</span></td>
+              </tr>
+              <tr>
+                <td>Cascada / Modelo V</td>
+                <td>54 / 100</td>
+                <td>Muy Baja (1/5)</td>
+                <td><span class="badge badge-no">Inflexible</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size:12.5px; color:var(--on-panel-muted); margin-top:10px;">
+            El modelo incremental permite validar verticalmente Catálogo e Inventario antes de construir el POS.
+          </p>
+        </div>
+
+        <!-- DESCARTE EXPRESO DE SCRUM -->
+        <div class="panel-card" style="background:rgba(232,241,236,0.06); border-left:3px solid var(--accent); padding:16px 18px;">
+          <div class="panel-tag" style="margin-bottom:8px;">Decisión Metodológica</div>
+          <h4 style="color:var(--accent-light); font-size:14.5px;">Descarte Expreso de Scrum</h4>
+          <ul style="padding-left:16px; font-size:12.5px; color:var(--on-panel-muted); line-height:1.48; margin-top:6px; display:flex; flex-direction:column; gap:8px;">
+            <li><strong>Sin Product Owner exclusivo:</strong> La propietaria comercial no dispone de tiempo para ceremonias diarias continuas.</li>
+            <li><strong>Línea base cerrada previa:</strong> El proyecto opera con especificaciones trazadas (StRS/SRS) y no con un backlog emergente.</li>
+            <li><strong>Prevención de "Scrum Zombie":</strong> Evita la sobrecarga de eventos formales innecesarios para un equipo compacto de 3 ingenieros.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 10: PLAN DE INCREMENTOS Y PUERTAS DE CALIDAD (PUSH)
+       ======================================================== -->
+  <section class="slide layout-diagram" data-transition="push" data-title="Plan de Incrementos & Gates">
+    <div class="diagram-header">
+      <div class="eyebrow">MET-MREC-001 · Estrategia de Construcción Progresiva</div>
+      <h2>Plan de Incrementos (I1 a I4) & Quality Gates (G0 a G3)</h2>
+      <p class="lead" style="margin-top:4px;">
+        Despliegue ordenado de capacidades funcionales con criterios de aceptación demostrables y compuertas de control:
+      </p>
+    </div>
+
+    <div class="diagram-box" style="padding:clamp(16px, 2vw, 24px);">
+      <!-- TIMELINE HORIZONTAL CONECTANDO G0 -> I1 -> G1 -> I2 -> G2 -> I3 -> G3 -> I4 -->
+      <div class="timeline-container">
+        <!-- ITEM 1: G0 & I1 -->
+        <div class="timeline-col">
+          <div class="gate-card">
+            <span class="gate-tag">GATE G0</span>
+            <div class="gate-title">Previa a Construcción</div>
+            <div class="gate-desc">Aprobación académica y técnica de requisitos, arquitectura y criterios de prueba.</div>
+          </div>
+          <div class="timeline-arrow-down">▼</div>
+          <div class="increment-card" style="border-top:4px solid var(--accent);">
+            <div class="increment-header">
+              <span class="increment-badge">INCREMENTO I1</span>
+            </div>
+            <h4 class="increment-title">Acceso & Catálogo</h4>
+            <p class="increment-desc">Autenticación RBAC, marcas y búsqueda paginada ≤ 3s.</p>
+            <div class="increment-footer">
+              <code>SYS-FN-001..005</code> · P95 ≤ 3s
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-connector">➔</div>
+
+        <!-- ITEM 2: G1 & I2 -->
+        <div class="timeline-col">
+          <div class="gate-card">
+            <span class="gate-tag">GATE G1</span>
+            <div class="gate-title">Previa a Integración</div>
+            <div class="gate-desc">Pruebas unitarias aprobadas, esquemas sin anomalías y contratos respetados.</div>
+          </div>
+          <div class="timeline-arrow-down">▼</div>
+          <div class="increment-card" style="border-top:4px solid #2da682;">
+            <div class="increment-header">
+              <span class="increment-badge" style="color:#2da682;">INCREMENTO I2</span>
+            </div>
+            <h4 class="increment-title">Abastecimiento & Stock</h4>
+            <p class="increment-desc">Órdenes de compra, Kardex inmutable y balance físico.</p>
+            <div class="increment-footer">
+              <code>SYS-FN-006..012</code> · Stock no neg.
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-connector">➔</div>
+
+        <!-- ITEM 3: G2 & I3 -->
+        <div class="timeline-col">
+          <div class="gate-card">
+            <span class="gate-tag">GATE G2</span>
+            <div class="gate-title">Previa a Aceptación</div>
+            <div class="gate-desc">Pruebas de integración superadas, verificación no funcional y RTM actualizada.</div>
+          </div>
+          <div class="timeline-arrow-down">▼</div>
+          <div class="increment-card" style="border-top:4px solid var(--gold);">
+            <div class="increment-header">
+              <span class="increment-badge" style="color:var(--gold);">INCREMENTO I3</span>
+            </div>
+            <h4 class="increment-title">Punto de Venta & Caja</h4>
+            <p class="increment-desc">Cotización, venta atómica multimedio y arqueo de caja.</p>
+            <div class="increment-footer">
+              <code>SYS-FN-013..018</code> · Rollback total
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-connector">➔</div>
+
+        <!-- ITEM 4: G3 & I4 -->
+        <div class="timeline-col">
+          <div class="gate-card">
+            <span class="gate-tag">GATE G3</span>
+            <div class="gate-title">Puesta en Marcha</div>
+            <div class="gate-desc">Regresión global superada y simulacro exitoso de restauración de backups.</div>
+          </div>
+          <div class="timeline-arrow-down">▼</div>
+          <div class="increment-card" style="border-top:4px solid #60a5fa;">
+            <div class="increment-header">
+              <span class="increment-badge" style="color:#60a5fa;">INCREMENTO I4</span>
+            </div>
+            <h4 class="increment-title">Posventa & Respaldos</h4>
+            <p class="increment-desc">Devoluciones, reportería y backups automáticos.</p>
+            <div class="increment-footer">
+              <code>SYS-FN-019..030</code> · RPO ≤ 24h
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13.5px; color:var(--on-panel-muted); border-top:1px solid rgba(232,241,236,0.12); padding-top:10px;">
+        <span><strong>Disciplina de Ingeniería:</strong> Cada incremento pasa por su respectiva compuerta antes de avanzar</span>
+        <span style="color:var(--accent-light);"><strong>Trazabilidad:</strong> Cobertura RTM del 100% en los 4 incrementos</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 11: MODELADO DEL SISTEMA - UML 2.5.1 (CIRCLE)
+       ======================================================== -->
+  <section class="slide layout-default" data-transition="circle" data-title="Modelado del Sistema (UML)">
+    <div class="txt">
+      <div class="eyebrow" style="--n:0">LM-MREC-001 · Notación Visual de Ingeniería</div>
+      <h2 style="--n:1">Modelado: Contrato de 7 Diagramas</h2>
+      <p style="--n:2">
+        Selección de <strong>UML 2.5.1 Selectivo (90 pts)</strong> sobre Perfiles formales (86 pts) y DSML autónomo (66 pts), restringido a <strong>7 diagramas del contrato</strong>:
+      </p>
+
+      <ul class="bullet-list" style="--n:3">
+        <li class="bullet-item">
+          <div class="bullet-num">1</div>
+          <div><strong>Casos de Uso (M-UC):</strong> Delimitación de actores internos y precondiciones operativas.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">2</div>
+          <div><strong>Clases Conceptuales (M-CLS):</strong> Multiplicidades exactas e invariantes de dominio.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">3</div>
+          <div><strong>Componentes (M-CMP):</strong> Módulos desacoplados y dependencias hacia el dominio.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">4</div>
+          <div><strong>Secuencia (M-SEQ):</strong> Delimitación de la transacción ACID (Commit / Rollback).</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">5</div>
+          <div><strong>Estados (M-STM):</strong> Ciclo de vida de Facturas y Turnos de Caja.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">6</div>
+          <div><strong>Actividades (M-ACT):</strong> Flujos de control operativo con carriles por rol (swimlanes).</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">7</div>
+          <div><strong>Despliegue (M-DEP):</strong> Topología de red LAN, puestos POS, servidor y nodo NAS.</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-tag">Modelo Conceptual M-CLS-01</span>
+        <span style="font-size:13px; color:var(--accent-light);">UML 2.5.1 & Invariantes</span>
+      </div>
+      <div class="panel-body">
+        <!-- DIAGRAMA UML DE CLASES CONCEPTUALES EN SVG (ENTIDADES DEL COMPENDIO) -->
+        <svg viewBox="0 0 580 195" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Clase Producto -->
+          <rect x="20" y="10" width="145" height="74" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="92" y="27" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="14">Producto</text>
+          <line x1="20" y1="33" x2="165" y2="33" stroke="rgba(232,241,236,0.2)" stroke-width="1"/>
+          <text x="28" y="47" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ id_producto: int</text>
+          <text x="28" y="61" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ stock_disponible: int</text>
+          <text x="28" y="75" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ precio_venta: dec</text>
+
+          <!-- Asociación Producto - DetalleFactura -->
+          <line x1="165" y1="47" x2="215" y2="47" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="170" y="37" width="18" height="20" rx="4" fill="#14342b"/>
+          <text x="179" y="52" text-anchor="middle" fill="#fca5c5" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">1</text>
+          <rect x="190" y="37" width="23" height="20" rx="4" fill="#14342b"/>
+          <text x="201" y="52" text-anchor="middle" fill="#fca5c5" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">1..*</text>
+
+          <!-- Clase DetalleFactura -->
+          <rect x="215" y="10" width="150" height="74" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="290" y="27" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="14">DetalleFactura</text>
+          <line x1="215" y1="33" x2="365" y2="33" stroke="rgba(232,241,236,0.2)" stroke-width="1"/>
+          <text x="223" y="47" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ id_detalle: int</text>
+          <text x="223" y="61" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ cantidad_vend: int</text>
+          <text x="223" y="75" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ precio_unitario: dec</text>
+
+          <!-- Asociación DetalleFactura - Factura -->
+          <line x1="365" y1="47" x2="415" y2="47" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="368" y="37" width="23" height="20" rx="4" fill="#14342b"/>
+          <text x="379" y="52" text-anchor="middle" fill="#fca5c5" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">1..*</text>
+          <rect x="393" y="37" width="18" height="20" rx="4" fill="#14342b"/>
+          <text x="402" y="52" text-anchor="middle" fill="#fca5c5" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">1</text>
+
+          <!-- Clase Factura (con margen de al menos 20px al borde) -->
+          <rect x="415" y="10" width="145" height="74" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="487" y="27" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="14">Factura</text>
+          <line x1="415" y1="33" x2="560" y2="33" stroke="rgba(232,241,236,0.2)" stroke-width="1"/>
+          <text x="423" y="47" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ id_factura: int</text>
+          <text x="423" y="61" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ fecha_emision</text>
+          <text x="423" y="75" fill="#e2e8f0" font-family="'JetBrains Mono',monospace" font-size="13">+ tipo_pago: str</text>
+
+          <!-- Clase MovimientoKardex (abajo de Producto) -->
+          <rect x="20" y="106" width="155" height="74" rx="6" fill="#0d221c" stroke="rgba(224,69,123,0.4)" stroke-width="1.2"/>
+          <text x="97" y="123" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="14">MovimientoKardex</text>
+          <line x1="20" y1="129" x2="175" y2="129" stroke="rgba(224,69,123,0.25)" stroke-width="1"/>
+          <text x="28" y="143" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">+ id_kardex: int</text>
+          <text x="28" y="157" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">+ tipo_mov: string</text>
+          <text x="28" y="171" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">+ saldo_stock: int</text>
+
+          <!-- Asociación Producto - Kardex -->
+          <line x1="92" y1="84" x2="92" y2="106" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="97" y="83" width="18" height="17" rx="3" fill="#14342b"/>
+          <text x="106" y="96" text-anchor="middle" fill="#fca5c5" font-weight="700" font-size="13">1</text>
+          <rect x="97" y="98" width="24" height="17" rx="3" fill="#14342b"/>
+          <text x="109" y="111" text-anchor="middle" fill="#fca5c5" font-weight="700" font-size="13">0..*</text>
+
+          <!-- Nota de integridad vinculada (alineada con Factura a x=560) -->
+          <rect x="215" y="106" width="345" height="74" rx="6" fill="rgba(232,241,236,0.06)" stroke="rgba(232,241,236,0.15)"/>
+          <text x="230" y="127" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">INTEGRIDAD DEL MODELO CONCEPTUAL</text>
+          <text x="230" y="147" fill="#e8f1ec" font-family="'DM Sans',sans-serif" font-size="13">• Multiplicidades 1..* obligatorias en líneas</text>
+          <text x="230" y="165" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">• Asiento atómico en Kardex por cada ΔStock</text>
+        </svg>
+
+        <!-- INVARIANTES EN VERSIÓN COMPACTA (1 LÍNEA C/U, MÁXIMO 3) -->
+        <div class="panel-card" style="padding:8px 12px; margin-top:8px;">
+          <div style="font-size:11.5px; font-weight:700; color:var(--accent-light); margin-bottom:5px; font-family:var(--font-mono);">INVARIANTES MATEMÁTICOS DEL DOMINIO</div>
+          <div class="code-block" style="font-size:clamp(11.5px, 0.85vw, 12.5px); padding:5px 10px; margin-bottom:4px;"><strong>INV-01:</strong> ∀ p ∈ Productos: stock(p) ≥ 0 ∧ (ΔStock ⟺ ∃! Kardex)</div>
+          <div class="code-block" style="font-size:clamp(11.5px, 0.85vw, 12.5px); padding:5px 10px; margin-bottom:4px;"><strong>INV-02:</strong> Venta = 'Confirmada' ⟹ ∑ Pago = Venta.total ∧ ∃! Factura</div>
+          <div class="code-block" style="font-size:clamp(11.5px, 0.85vw, 12.5px); padding:5px 10px;"><strong>INV-05:</strong> Entidades ∈ {Facturas, Compras, Kardex} ⟹ DELETE = FALSE</div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; color:var(--on-panel-muted);">
+        Verificación síncrona forzada en servidor antes de persistir cualquier cambio.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 12: ANÁLISIS Y DISEÑO: BASE DE DATOS FÍSICA (CIRCLE)
+       ======================================================== -->
+  <section class="slide layout-default" data-transition="circle" data-title="Análisis y Diseño: Base de Datos">
+    <div class="txt">
+      <div class="eyebrow" style="--n:0">Análisis y Diseño del Sistema · Back-End</div>
+      <h2 style="--n:1">Base de Datos Física (PostgreSQL 16)</h2>
+      <p style="--n:2">
+        Esquema relacional en <strong>Tercera Forma Normal (3FN)</strong> con 8 tablas maestras y transaccionales para garantizar integridad referencial estricta:
+      </p>
+
+      <ul class="bullet-list" style="--n:3">
+        <li class="bullet-item">
+          <div class="bullet-icon">📦</div>
+          <div><strong>Productos & Categorías:</strong> Catálogo con compatibilidad vehicular por años y restricción <code>CHECK (calidad IN ('A','AA','AAA'))</code>.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-icon">🧾</div>
+          <div><strong>Facturas & Detalle_Facturas:</strong> Cabecera con fecha y cajero; líneas con precio unitario histórico congelado.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-icon">🚚</div>
+          <div><strong>Proveedores & Compras:</strong> Registro cronológico de ingresos con costo unitario para cálculo de márgenes.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-icon">🛡️</div>
+          <div><strong>Seguridad DCL:</strong> Roles segregados <code>Rol_Administrador</code> y <code>Rol_Vendedor</code> sin acceso no autorizado.</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-tag">Modelo Relacional Físico (3FN)</span>
+        <span style="font-size:13px; color:var(--accent-light);">8 Entidades & Cardinalidades</span>
+      </div>
+      <div class="panel-body">
+        <!-- MINI DIAGRAMA ENTIDAD-RELACIÓN EN SVG (8 ENTIDADES SEGÚN COMPENDIO §2.1) -->
+        <svg viewBox="0 0 580 200" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+          <!-- FILA 1 -->
+          <!-- Categorías -->
+          <rect x="20" y="10" width="102" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="71" y="29" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">Categorías</text>
+          <text x="71" y="47" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_cat (PK)</text>
+
+          <!-- 1:N Categorías -> Productos -->
+          <line x1="122" y1="34" x2="158" y2="34" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="125" y="24" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="133" y="38" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">1</text>
+          <rect x="142" y="24" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="150" y="38" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">N</text>
+
+          <!-- Productos -->
+          <rect x="158" y="10" width="106" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="211" y="29" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">Productos</text>
+          <text x="211" y="47" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_prod (PK)</text>
+
+          <!-- 1:N Productos -> Detalle_Facturas -->
+          <line x1="264" y1="34" x2="304" y2="34" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="268" y="24" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="276" y="38" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">1</text>
+          <rect x="286" y="24" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="294" y="38" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">N</text>
+
+          <!-- Detalle_Facturas -->
+          <rect x="304" y="10" width="130" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="369" y="29" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">Detalle_Facturas</text>
+          <text x="369" y="47" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="12.5">id_fac, id_prod</text>
+
+          <!-- N:1 Detalle_Facturas <- Facturas -->
+          <line x1="434" y1="34" x2="474" y2="34" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="439" y="24" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="447" y="38" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">N</text>
+          <rect x="457" y="24" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="465" y="38" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">1</text>
+
+          <!-- Facturas (margen de 20px al borde derecho) -->
+          <rect x="474" y="10" width="86" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="517" y="29" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">Facturas</text>
+          <text x="517" y="47" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_fac (PK)</text>
+
+          <!-- FILA 2 -->
+          <!-- Proveedores -->
+          <rect x="20" y="80" width="102" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="71" y="99" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">Proveedores</text>
+          <text x="71" y="117" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_prov (PK)</text>
+
+          <!-- 1:N Proveedores -> Compras -->
+          <line x1="122" y1="104" x2="158" y2="104" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="125" y="94" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="133" y="108" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">1</text>
+          <rect x="142" y="94" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="150" y="108" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">N</text>
+
+          <!-- Compras_Proveedores -->
+          <rect x="158" y="80" width="106" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="211" y="99" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">Compras</text>
+          <text x="211" y="117" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_compra (PK)</text>
+
+          <!-- 1:N Productos -> Compras -->
+          <line x1="211" y1="58" x2="211" y2="80" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="216" y="58" width="16" height="15" rx="2" fill="#14342b"/>
+          <text x="224" y="70" text-anchor="middle" fill="#f4729f" font-weight="700" font-size="13">1</text>
+          <rect x="216" y="71" width="16" height="15" rx="2" fill="#14342b"/>
+          <text x="224" y="83" text-anchor="middle" fill="#f4729f" font-weight="700" font-size="13">N</text>
+
+          <!-- Clientes -->
+          <rect x="304" y="80" width="102" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="355" y="99" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">Clientes</text>
+          <text x="355" y="117" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_cli (PK)</text>
+
+          <!-- 1:N Clientes -> Facturas -->
+          <path d="M 406 104 L 495 104 L 495 58" fill="none" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="412" y="94" width="16" height="18" rx="3" fill="#14342b"/>
+          <text x="420" y="108" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">1</text>
+          <rect x="487" y="63" width="16" height="16" rx="3" fill="#14342b"/>
+          <text x="495" y="76" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">N</text>
+
+          <!-- Empleados (margen de 20px al borde derecho) -->
+          <rect x="440" y="80" width="120" height="48" rx="6" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="500" y="99" text-anchor="middle" fill="#ffffff" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">Empleados</text>
+          <text x="500" y="117" text-anchor="middle" fill="#a3beb1" font-family="'JetBrains Mono',monospace" font-size="13">id_emp (PK)</text>
+
+          <!-- 1:N Empleados -> Facturas -->
+          <line x1="530" y1="80" x2="530" y2="58" stroke="#e0457b" stroke-width="1.8"/>
+          <rect x="535" y="60" width="16" height="15" rx="2" fill="#14342b"/>
+          <text x="543" y="72" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">1</text>
+          <rect x="535" y="73" width="16" height="15" rx="2" fill="#14342b"/>
+          <text x="543" y="85" text-anchor="middle" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13">N</text>
+
+          <!-- FILA 3: Integridad referencial (alineada a x=20..560) -->
+          <rect x="20" y="145" width="540" height="46" rx="6" fill="rgba(232,241,236,0.06)" stroke="rgba(232,241,236,0.14)"/>
+          <text x="290" y="164" text-anchor="middle" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="13.5">INTEGRIDAD REFERENCIAL ESTRICTA (8 ENTIDADES EN 3FN)</text>
+          <text x="290" y="181" text-anchor="middle" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">ON DELETE RESTRICT en catálogo y ventas · ON DELETE CASCADE en DetalleFacturas</text>
+        </svg>
+
+        <!-- TRIGGER SQL (8 LÍNEAS, MÁXIMO ~50 CARACTERES POR LÍNEA) -->
+        <div class="panel-card" style="padding:8px 12px; margin-top:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-size:12px; font-weight:700; color:var(--accent-light); font-family:var(--font-mono);">TRIGGER &amp; FUNCIÓN: TR_DeducirStock_Venta (PL/pgSQL)</span>
+            <span style="font-size:11.5px; color:var(--on-panel-muted);">BEFORE INSERT</span>
+          </div>
+          <div class="code-block" style="font-size:clamp(11.5px, 0.82vw, 12px); padding:7px 10px; line-height:1.35;">
+<span class="code-keyword">CREATE FUNCTION</span> fn_deducir_stock() <span class="code-keyword">RETURNS TRIGGER AS</span> $$
+<span class="code-keyword">BEGIN</span>
+  <span class="code-keyword">IF</span> (<span class="code-keyword">SELECT</span> stock_disponible <span class="code-keyword">FROM</span> Productos
+      <span class="code-keyword">WHERE</span> id_producto = NEW.id_producto)
+      &lt; NEW.cantidad_vendida <span class="code-keyword">THEN</span>
+    <span class="code-keyword">RAISE EXCEPTION</span> <span class="code-str">'Stock insuficiente'</span>;
+  <span class="code-keyword">END IF</span>; <span class="code-keyword">RETURN</span> NEW;
+<span class="code-keyword">END</span>; $$ <span class="code-keyword">LANGUAGE</span> plpgsql;</div>
+        </div>
+      </div>
+      <div style="font-size:12.5px; color:var(--on-panel-muted);">
+        Vistas analíticas: <code>VW_Alertas_Stock_Critico</code> y <code>VW_Auditoria_Ventas</code>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 13: DINÁMICA TRANSACCIONAL Y DESPLIEGUE (PUSH)
+       ======================================================== -->
+  <section class="slide layout-default" data-transition="push" data-title="Dinámica Transaccional & Despliegue">
+    <div class="txt">
+      <div class="eyebrow" style="--n:0">Análisis y Diseño del Sistema · Operación</div>
+      <h2 style="--n:1">Dinámica Transaccional & Despliegue</h2>
+      <p style="--n:2">
+        Secuencia atómica del caso crítico <strong>CU-VENTA</strong> bajo semántica <strong>ACID estricta</strong>:
+      </p>
+
+      <!-- DIAGRAMA DE FLUJO VISUAL DE CU-VENTA (COMPENDIO §7.1) -->
+      <div class="cu-flow-container" style="--n:3">
+        <div class="cu-flow-step">
+          <div class="cu-step-num">1</div>
+          <div class="cu-step-info">
+            <strong>Validación de stock</strong>
+            <span>Existencia física disponible ≥ cantidad solicitada</span>
+          </div>
+        </div>
+
+        <div class="cu-flow-step">
+          <div class="cu-step-num">2</div>
+          <div class="cu-step-info">
+            <strong>Verificación de pago total exacto</strong>
+            <span>Validación de importe liquidado (RN-07)</span>
+          </div>
+        </div>
+
+        <div class="cu-flow-step">
+          <div class="cu-step-num">3</div>
+          <div class="cu-step-info">
+            <strong>Registro de factura & líneas</strong>
+            <span>Cabecera de comprobante e inserción de líneas de detalle</span>
+          </div>
+        </div>
+
+        <div class="cu-flow-step">
+          <div class="cu-step-num">4</div>
+          <div class="cu-step-info">
+            <strong>Inserción de pagos</strong>
+            <span>Discriminación por medio de pago recibido (RN-08)</span>
+          </div>
+        </div>
+
+        <div class="cu-flow-step">
+          <div class="cu-step-num">5</div>
+          <div class="cu-step-info">
+            <strong>Asiento en Kardex</strong>
+            <span>Descargo físico inmutable de inventario (INV-01)</span>
+          </div>
+        </div>
+
+        <div class="cu-flow-step">
+          <div class="cu-step-num">6</div>
+          <div class="cu-step-info">
+            <strong>Registro en caja & auditoría</strong>
+            <span>Asignación a turno de caja y bitácora de eventos</span>
+          </div>
+        </div>
+
+        <!-- BIFURCACIÓN DE SALIDAS -->
+        <div class="cu-flow-outcomes">
+          <div class="cu-outcome commit">
+            <div class="outcome-badge">✔ COMMIT</div>
+            <span>Persistencia atómica + Impresión de ticket ESC/POS</span>
+          </div>
+          <div class="cu-outcome rollback">
+            <div class="outcome-badge">✖ ROLLBACK</div>
+            <span>Reversión total + Borrador de venta intacto</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-tag">Topología LAN Local (M-DEP-01)</span>
+        <span class="badge badge-win" style="font-size:12.5px;">Cero Dependencia Cloud</span>
+      </div>
+      <div class="panel-body">
+        <!-- REDISEÑO SVG LAN TOPOLOGY (ENLARGED, TEXTO >= 12PX RENDERIZADO) -->
+        <svg viewBox="0 0 560 375" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
+          <!-- Servidor Local (sin IP asumida) -->
+          <rect x="18" y="14" width="250" height="116" rx="10" fill="#1b4539" stroke="rgba(232,241,236,0.3)" stroke-width="1.2"/>
+          <text x="34" y="38" fill="#e0457b" font-family="'DM Sans',sans-serif" font-weight="700" font-size="14.5">SERVIDOR LOCAL</text>
+          <text x="34" y="59" fill="#e8f1ec" font-family="'DM Sans',sans-serif" font-size="13">• Monolito Modular Web</text>
+          <text x="34" y="77" fill="#e8f1ec" font-family="'DM Sans',sans-serif" font-size="13">• Motor PostgreSQL 16 (ACID)</text>
+          <text x="34" y="95" fill="#e8f1ec" font-family="'DM Sans',sans-serif" font-size="13">• Tareas: Backups automáticos 23:00</text>
+          <rect x="34" y="102" width="104" height="20" rx="3" fill="#e0457b"/>
+          <text x="86" y="116" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">UPS ≥ 15 MIN</text>
+
+          <!-- Nodo Almacenamiento / NAS -->
+          <rect x="292" y="14" width="250" height="116" rx="10" fill="#0d221c" stroke="rgba(232,241,236,0.2)" stroke-width="1.2"/>
+          <text x="308" y="38" fill="#f4729f" font-family="'DM Sans',sans-serif" font-weight="700" font-size="14.5">NODO ALMACENAMIENTO / NAS</text>
+          <text x="308" y="60" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">• Copias Diarias Cifradas y Comprimidas</text>
+          <text x="308" y="80" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">• Resguardo: RPO ≤ 24h / RTO ≤ 4h</text>
+          <text x="308" y="100" fill="#a3beb1" font-family="'DM Sans',sans-serif" font-size="13">• Aislamiento físico de seguridad</text>
+
+          <!-- Cableado estructurado LAN (sin velocidad ni modelo asumidos) -->
+          <line x1="143" y1="130" x2="143" y2="165" stroke="#e0457b" stroke-width="2.2"/>
+          <line x1="417" y1="130" x2="417" y2="165" stroke="#e0457b" stroke-width="2.2"/>
+          <line x1="30" y1="165" x2="530" y2="165" stroke="#e0457b" stroke-width="2.2"/>
+          <rect x="135" y="152" width="290" height="26" rx="6" fill="#14342b" stroke="#e0457b" stroke-width="1.2"/>
+          <text x="280" y="170" fill="#e0457b" font-size="13.5" font-family="'DM Sans',sans-serif" text-anchor="middle" font-weight="bold">RED CABLEADA ESTRUCTURADA LAN</text>
+
+          <!-- Estaciones de Trabajo POS 1 & 2 -->
+          <line x1="100" y1="165" x2="100" y2="205" stroke="#e0457b" stroke-width="2"/>
+          <rect x="18" y="205" width="165" height="155" rx="8" fill="#1b4539" stroke="rgba(232,241,236,0.2)"/>
+          <text x="32" y="230" fill="#fff" font-weight="bold" font-size="13.5">Cajas Mostrador (1 & 2)</text>
+          <text x="32" y="248" fill="#e0457b" font-weight="bold" font-size="13">Hasta 4 terminales POS</text>
+          <text x="32" y="272" fill="#a3beb1" font-size="13">• Lector Código USB</text>
+          <text x="32" y="295" fill="#a3beb1" font-size="13">• Ticketera ESC/POS</text>
+          <text x="32" y="318" fill="#a3beb1" font-size="13">• Navegador moderno</text>
+          <text x="32" y="341" fill="#a3beb1" font-size="13">• Cobro en mostrador</text>
+
+          <!-- Estaciones de Trabajo POS 3 & 4 -->
+          <line x1="280" y1="165" x2="280" y2="205" stroke="#e0457b" stroke-width="2"/>
+          <rect x="197" y="205" width="165" height="155" rx="8" fill="#1b4539" stroke="rgba(232,241,236,0.2)"/>
+          <text x="211" y="230" fill="#fff" font-weight="bold" font-size="13.5">Cajas Mostrador (3 & 4)</text>
+          <text x="211" y="248" fill="#e0457b" font-weight="bold" font-size="13">Facturación y Cobro</text>
+          <text x="211" y="272" fill="#a3beb1" font-size="13">• Lector Código USB</text>
+          <text x="211" y="295" fill="#a3beb1" font-size="13">• Ticketera ESC/POS</text>
+          <text x="211" y="318" fill="#a3beb1" font-size="13">• Emisión comprobante</text>
+          <text x="211" y="341" fill="#a3beb1" font-size="13">• Multimedio de pago</text>
+
+          <!-- Bodega & Administración -->
+          <line x1="460" y1="165" x2="460" y2="205" stroke="#e0457b" stroke-width="2"/>
+          <rect x="377" y="205" width="165" height="155" rx="8" fill="#1b4539" stroke="rgba(232,241,236,0.2)"/>
+          <text x="391" y="230" fill="#fff" font-weight="bold" font-size="13.5">Bodega & Admin (1 a 2)</text>
+          <text x="391" y="248" fill="#e0457b" font-weight="bold" font-size="13">Recepción y Gestión</text>
+          <text x="391" y="272" fill="#a3beb1" font-size="13">• Recepción compras</text>
+          <text x="391" y="295" fill="#a3beb1" font-size="13">• Conteo físico stock</text>
+          <text x="391" y="318" fill="#a3beb1" font-size="13">• Gestión catálogos</text>
+          <text x="391" y="341" fill="#a3beb1" font-size="13">• Reportería directiva</text>
+        </svg>
+      </div>
+      <div style="font-size:12.5px; color:var(--on-panel-muted); margin-top:8px;">
+        Arquitectura física local según especificación <code>M-DEP-01</code>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       SLIDE 14: CONCLUSIONES Y CIERRE (FADE)
+       ======================================================== -->
+  <section class="slide layout-default" data-transition="fade" data-title="Conclusiones del Proyecto">
+    <div class="txt">
+      <div class="eyebrow" style="--n:0">Cierre del Proyecto de Ingeniería</div>
+      <h2 style="--n:1">Conclusiones del Proyecto</h2>
+      <p style="--n:2">
+        El compendio técnico demuestra cómo la ingeniería de software aplicada transforma el comercio tradicional:
+      </p>
+
+      <ul class="bullet-list" style="--n:3">
+        <li class="bullet-item">
+          <div class="bullet-num">1</div>
+          <div><strong>Rigor Normativo Unificado:</strong> Trazabilidad sin fisuras desde la base de datos hasta el diseño bajo ISO 29148, 42010 y 12207.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">2</div>
+          <div><strong>Arquitectura Sostenible:</strong> Selección de Monolito Modular Web, descartando la sobreingeniería costosa de microservicios.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">3</div>
+          <div><strong>Independencia Tecnológica:</strong> Operación al 100% en red local LAN con protección ante cortes de Internet o energía eléctrica.</div>
+        </li>
+        <li class="bullet-item">
+          <div class="bullet-num">4</div>
+          <div><strong>Certeza Financiera y de Stock:</strong> Kardex inmutable y transacciones ACID que aseguran el control de cada pieza y córdoba.</div>
+        </li>
+      </ul>
+
+      <div style="--n:4; margin-top:14px;">
+        <span class="badge badge-win" style="font-size:13px; padding:4px 11px;">Fin de la Presentación</span>
+        <span style="font-size:14px; color:var(--muted); margin-left:10px;">¡Muchas gracias por su atención!</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-tag">Síntesis Final</span>
+        <span style="font-size:13px; color:var(--accent-light);">UNI · DACTIC 2026</span>
+      </div>
+      <div class="panel-body">
+        <div class="quote">
+          “La ingeniería de software no consiste en acumular complejidad, sino en diseñar la solución más sólida, predecible y verificable para el negocio.”
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+          <div class="panel-card">
+            <span style="font-size:12.5px; text-transform:uppercase; color:var(--on-panel-muted); font-weight:600;">Requisitos Trazados</span>
+            <div style="color:#fff; font-size:28px; font-weight:bold; font-family:var(--font-display); margin-top:4px;">100%</div>
+          </div>
+          <div class="panel-card">
+            <span style="font-size:12.5px; text-transform:uppercase; color:var(--on-panel-muted); font-weight:600;">Disponibilidad Local</span>
+            <div style="color:#4ade80; font-size:28px; font-weight:bold; font-family:var(--font-display); margin-top:4px;">≥ 99.5%</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:13px; color:var(--on-panel-muted); display:flex; justify-content:space-between;">
+        <span>Espacio para Preguntas y Respuestas</span>
+        <span style="color:var(--accent-light);">Fin de Diapositivas</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       LÓGICA JAVASCRIPT DE NAVEGACIÓN Y MOTOR DE TRANSICIONES
+       ======================================================== -->
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const progressBar = document.getElementById('progressBar');
+    const slideCount = document.getElementById('slideCount');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnIndex = document.getElementById('btnIndex');
+    const indexModal = document.getElementById('indexModal');
+    const btnCloseIndex = document.getElementById('btnCloseIndex');
+    const indexGrid = document.getElementById('indexGrid');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+    const btnHelp = document.getElementById('btnHelp');
+    const helpModal = document.getElementById('helpModal');
+    const btnCloseHelp = document.getElementById('btnCloseHelp');
+    const btnTheme = document.getElementById('btnTheme');
+
+    let currentSlide = 0;
+    let navEpoch = 0;
+    let navTimer = null;
+
+    // Control de Modo Oscuro / Claro con persistencia y retroalimentación en botón
+    function setTheme(theme) {
+      const isDark = (theme === 'dark');
+      document.body.classList.toggle('dark-mode', isDark);
+      if (btnTheme) {
+        btnTheme.textContent = isDark ? '☀️' : '🌙';
+        btnTheme.setAttribute('title', isDark ? 'Tema: Oscuro (D) · Clic para cambiar a Claro' : 'Tema: Claro (D) · Clic para cambiar a Oscuro');
+        btnTheme.setAttribute('aria-label', isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
+      }
+      try { localStorage.setItem('mrec_theme', isDark ? 'dark' : 'light'); } catch(e) {}
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.classList.contains('dark-mode');
+      setTheme(isDark ? 'light' : 'dark');
+    }
+
+    if (btnTheme) {
+      btnTheme.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleTheme();
+      });
+    }
+
+    // Actualización completa de UI (Progreso, Contador, Botones e Índice)
+    function updateUI(n) {
+      const progress = ((n + 1) / slides.length) * 100;
+      progressBar.style.width = progress + '%';
+      slideCount.textContent = (n + 1) + ' / ' + slides.length;
+
+      btnPrev.disabled = (n === 0);
+      btnNext.disabled = (n === slides.length - 1);
+
+      updateIndexHighlight(n);
+    }
+
+    // Poblar el índice dinámicamente según data-title
+    function buildIndex() {
+      indexGrid.innerHTML = '';
+      slides.forEach((s, idx) => {
+        const item = document.createElement('button');
+        item.className = 'index-item' + (idx === 0 ? ' active' : '');
+        item.innerHTML = `
+          <span class="index-num">DIAPOSITIVA ${String(idx + 1).padStart(2, '0')}</span>
+          <span class="index-title">${s.dataset.title || 'Diapositiva ' + (idx + 1)}</span>
+        `;
+        item.addEventListener('click', () => {
+          goToSlide(idx);
+          indexModal.classList.remove('open');
+        });
+        indexGrid.appendChild(item);
+      });
+    }
+
+    function updateIndexHighlight(n) {
+      const items = indexGrid.querySelectorAll('.index-item');
+      items.forEach((it, idx) => {
+        if (idx === n) it.classList.add('active');
+        else it.classList.remove('active');
+      });
+    }
+
+    // Navegar a diapositiva aplicando transiciones direccionales y resolviendo condiciones de carrera (A5)
+    function goToSlide(n) {
+      n = Math.max(0, Math.min(slides.length - 1, n));
+      if (n === currentSlide) return;
+
+      navEpoch++;
+      const thisEpoch = navEpoch;
+      if (navTimer) clearTimeout(navTimer);
+
+      const direction = n > currentSlide ? 1 : -1;
+      const prevSlide = slides[currentSlide];
+      const nextSlide = slides[n];
+
+      // Limpiar inmediatamente cualquier diapositiva ajena al paso actual
+      slides.forEach((s, idx) => {
+        if (idx !== currentSlide && idx !== n) {
+          s.classList.remove('active', 'out', 'from-prev', 'from-next', 'push-out-left', 'push-out-right', 'fade-out');
+        }
+      });
+
+      const nextTrans = nextSlide.dataset.transition || 'fade';
+      const prevTrans = prevSlide ? (prevSlide.dataset.transition || 'fade') : 'fade';
+
+      // Salida de la diapositiva previa
+      if (prevSlide) {
+        prevSlide.classList.remove('active');
+        prevSlide.classList.add('out');
+        if (prevTrans === 'push') {
+          prevSlide.classList.add(direction > 0 ? 'push-out-left' : 'push-out-right');
+        } else {
+          prevSlide.classList.add('fade-out');
+        }
+      }
+
+      // Entrada de la nueva diapositiva con dirección
+      nextSlide.classList.remove('out', 'push-out-left', 'push-out-right', 'fade-out');
+      nextSlide.classList.add(direction > 0 ? 'from-prev' : 'from-next');
+      void nextSlide.offsetWidth; // Forzar reflujo para activar animación CSS
+      nextSlide.classList.add('active');
+
+      currentSlide = n;
+      updateUI(n);
+
+      // Limpieza garantizada de todas las clases de salida tras finalizar la transición CSS (A5)
+      navTimer = setTimeout(() => {
+        if (navEpoch === thisEpoch) {
+          slides.forEach((s, idx) => {
+            if (idx !== currentSlide) {
+              s.classList.remove('active', 'out', 'from-prev', 'from-next', 'push-out-left', 'push-out-right', 'fade-out');
+            }
+          });
+        }
+      }, 500);
+    }
+
+    // Inicializar presentación y UI en la primera diapositiva (o según parámetro de URL)
+    function initPresentation() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeParam = urlParams.get('theme');
+        if (themeParam === 'dark' || themeParam === 'light') {
+          setTheme(themeParam);
+        } else {
+          const savedTheme = localStorage.getItem('mrec_theme');
+          if (savedTheme) {
+            setTheme(savedTheme);
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+          } else {
+            setTheme('light');
+          }
+        }
+      } catch(e) {
+        setTheme('light');
+      }
+
+      buildIndex();
+      const urlParams = new URLSearchParams(window.location.search);
+      const slideParam = urlParams.get('slide');
+      let target = 0;
+      if (slideParam) {
+        const parsed = parseInt(slideParam, 10) - 1;
+        if (!isNaN(parsed) && parsed >= 0 && parsed < slides.length) target = parsed;
+      }
+      slides.forEach(s => s.classList.remove('active', 'out', 'from-prev', 'from-next', 'push-out-left', 'push-out-right', 'fade-out'));
+      slides[target].classList.add('active');
+      currentSlide = target;
+      updateUI(target);
+    }
+
+    // Navegación por teclado
+    window.addEventListener('keydown', e => {
+      const isIndexOpen = indexModal.classList.contains('open');
+      const isHelpOpen = helpModal.classList.contains('open');
+
+      if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) {
+        if (!isIndexOpen && !isHelpOpen) {
+          e.preventDefault();
+          goToSlide(currentSlide + 1);
+        }
+      }
+      if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) {
+        if (!isIndexOpen && !isHelpOpen) {
+          e.preventDefault();
+          goToSlide(currentSlide - 1);
+        }
+      }
+      if (['Home'].includes(e.key) && !isIndexOpen && !isHelpOpen) goToSlide(0);
+      if (['End'].includes(e.key) && !isIndexOpen && !isHelpOpen) goToSlide(slides.length - 1);
+
+      // Tecla D para alternar Modo Oscuro / Claro
+      if (e.key === 'd' || e.key === 'D') {
+        if (!isIndexOpen && !isHelpOpen) {
+          toggleTheme();
+        }
+      }
+
+      // Teclas M / I para índice
+      if (e.key === 'm' || e.key === 'M' || e.key === 'i' || e.key === 'I') {
+        if (!isHelpOpen) {
+          indexModal.classList.toggle('open');
+        }
+      }
+      // Tecla F para pantalla completa
+      if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      }
+      // Tecla ? o H para ayuda
+      if (e.key === '?' || e.key === 'h' || e.key === 'H') {
+        if (!isIndexOpen) {
+          helpModal.classList.toggle('open');
+        }
+      }
+      if (e.key === 'Escape') {
+        indexModal.classList.remove('open');
+        helpModal.classList.remove('open');
+      }
+    });
+
+    // Botones prev / next
+    btnPrev.addEventListener('click', e => { e.stopPropagation(); goToSlide(currentSlide - 1); });
+    btnNext.addEventListener('click', e => { e.stopPropagation(); goToSlide(currentSlide + 1); });
+
+    // Modales de control
+    btnIndex.addEventListener('click', e => { e.stopPropagation(); indexModal.classList.add('open'); });
+    btnCloseIndex.addEventListener('click', () => indexModal.classList.remove('open'));
+    indexModal.addEventListener('click', e => { if (e.target === indexModal) indexModal.classList.remove('open'); });
+
+    btnHelp.addEventListener('click', e => { e.stopPropagation(); helpModal.classList.add('open'); });
+    btnCloseHelp.addEventListener('click', () => helpModal.classList.remove('open'));
+    helpModal.addEventListener('click', e => { if (e.target === helpModal) helpModal.classList.remove('open'); });
+
+    // Pantalla completa
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+    btnFullscreen.addEventListener('click', e => { e.stopPropagation(); toggleFullscreen(); });
+
+    // Navegación táctil (Swipe)
+    let touchStartX = 0;
+    window.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    window.addEventListener('touchend', e => {
+      const diffX = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(diffX) > 45) {
+        goToSlide(currentSlide + (diffX < 0 ? 1 : -1));
+      }
+    }, { passive: true });
+
+    // Ejecutar inicio inmediato
+    initPresentation();
+  </script>
+</body>
+</html>

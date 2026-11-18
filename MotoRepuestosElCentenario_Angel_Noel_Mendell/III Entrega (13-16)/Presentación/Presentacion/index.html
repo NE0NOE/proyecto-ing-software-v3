@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defensa de Proyecto - Moto Repuestos El Centenario, S.A.</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- Three.js para WebGL 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+    
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #020617; 
+            color: #f1f5f9; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        
+        #canvas-container { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
+        }
+        
+        #ui-layer { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; 
+            display: flex; flex-direction: column; pointer-events: none; 
+        }
+
+        .slide { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -45%) scale(0.95); 
+            opacity: 0; transition: all 0.65s cubic-bezier(0.22, 1, 0.36, 1); 
+            pointer-events: none; width: 93%; max-width: 1020px; 
+            visibility: hidden; max-height: calc(100vh - 8.2rem); overflow-y: auto;
+        }
+
+        .slide.active { 
+            opacity: 1; transform: translate(-50%, -50%) scale(1); 
+            pointer-events: auto; visibility: visible;
+        }
+
+        .glass-panel { 
+            background: rgba(15, 23, 42, 0.78); 
+            backdrop-filter: blur(22px); 
+            -webkit-backdrop-filter: blur(22px); 
+            border: 1px solid rgba(255, 255, 255, 0.13); 
+            border-radius: 1.5rem; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); 
+            padding: 1.75rem 2.15rem; 
+        }
+
+        .controls { 
+            position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); 
+            display: flex; gap: 1.25rem; align-items: center; pointer-events: auto; 
+        }
+
+        button.nav-btn { 
+            background: rgba(30, 41, 59, 0.88); border: 1px solid rgba(255,255,255,0.2); 
+            color: white; width: 3.1rem; height: 3.1rem; border-radius: 50%; 
+            cursor: pointer; transition: all 0.2s; display: flex; 
+            justify-content: center; align-items: center; 
+        }
+        button.nav-btn:hover { background: rgba(51, 65, 85, 1); transform: scale(1.08); }
+        button.nav-btn:disabled { opacity: 0.25; cursor: not-allowed; transform: scale(1); }
+
+        .progress-bar-container { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.06); 
+        }
+        
+        .progress-bar { 
+            height: 100%; background: linear-gradient(to right, #3b82f6, #10b981); 
+            width: 7.14%; transition: width 0.4s ease; 
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.45); }
+
+        .text-emerald { color: #34d399; }
+        .text-blue { color: #60a5fa; }
+        
+        .stack { display: flex; height: 1.65rem; border-radius: .5rem; overflow: hidden; background: #0f172a; }
+        .seg { height: 100%; width: 0; transition: width 1.1s cubic-bezier(.22,1,.36,1); }
+        .bar { width: 0; transition: width 1s cubic-bezier(.22,1,.36,1); }
+        .vbar { position: absolute; left: 18%; width: 64%; height: 0; border-radius: 4px; transition: height 1s cubic-bezier(.22,1,.36,1); }
+        
+        .c1 { background: #3b82f6; } 
+        .c2 { background: #10b981; } 
+        .c3 { background: #f59e0b; }
+        .c4 { background: #f43f5e; } 
+        .c5 { background: #a78bfa; } 
+        .c6 { background: #94a3b8; }
+
+        
+        /* Estilos de Enlaces a Referencias Documentales Directas (#page=N) */
+        .ref-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 10px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            padding: 0.22rem 0.55rem;
+            border-radius: 0.45rem;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #7dd3fc;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+        }
+        .ref-link:hover {
+            background: rgba(14, 116, 144, 0.35);
+            border-color: #38bdf8;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+        }
+        .ref-link.ref-infra {
+            border-color: rgba(16, 185, 129, 0.45);
+            color: #6ee7b7;
+        }
+        .ref-link.ref-infra:hover {
+            background: rgba(6, 78, 59, 0.45);
+            border-color: #10b981;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+        .ref-link.ref-legal {
+            border-color: rgba(245, 158, 11, 0.45);
+            color: #fcd34d;
+        }
+        .ref-link.ref-legal:hover {
+            background: rgba(120, 53, 15, 0.45);
+            border-color: #f59e0b;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+        }
+        .ref-link.ref-extra {
+            border-color: rgba(168, 85, 247, 0.45);
+            color: #d8b4fe;
+        }
+        .ref-link.ref-extra:hover {
+            background: rgba(88, 28, 135, 0.45);
+            border-color: #a855f7;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+        }
+        .cite-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 9px;
+            font-family: ui-monospace, monospace;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            vertical-align: middle;
+        }
+        .cite-pill:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+
+        .ref-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 10px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            padding: 0.2rem 0.55rem;
+            border-radius: 0.375rem;
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: #cbd5e1;
+        }
+        
+        @media (prefers-reduced-motion: reduce) { .seg, .bar, .vbar, .slide { transition: none; } }
+    </style>
+</head>
+<body>
+    
+    <!-- Contenedor 3D WebGL -->
+    <div id="canvas-container"></div>
+
+    <!-- Interfaz 2D -->
+    <div id="ui-layer">
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <!-- Enlaces superiores directos a Informes, Evidencias y Contrato PDF -->
+        <div class="absolute top-3 right-5 flex items-center gap-2 pointer-events-auto z-20">
+            <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs border border-slate-700/60 shadow-lg backdrop-blur-md transition-all">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue"></i>
+                <span class="hidden sm:inline">Informe Financiero</span>
+                <span class="sm:hidden">Financiero</span>
+            </a>
+            <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs border border-slate-700/60 shadow-lg backdrop-blur-md transition-all">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald"></i>
+                <span class="hidden sm:inline">Proforma e Infraestructura</span>
+                <span class="sm:hidden">Proforma</span>
+            </a>
+            <a href="visor-excel.html" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 text-xs border border-emerald-500/50 shadow-lg backdrop-blur-md transition-all cursor-pointer" title="Abrir Modelo Financiero en el Navegador (Visor Interactivo .xlsx)">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span class="hidden lg:inline">Modelo Excel (.xlsx)</span>
+                <span class="lg:hidden">Excel</span>
+                <i data-lucide="external-link" class="w-3 h-3 text-emerald-400/70"></i>
+            </a>
+            <a href="docs/Contrato_de_Licencia_de_Software.pdf" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs border border-amber-500/50 text-amber-300 shadow-lg backdrop-blur-md transition-all">
+                <i data-lucide="scale" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span class="hidden sm:inline">Contrato Legal</span>
+                <span class="sm:hidden">Contrato</span>
+            </a>
+            <button onclick="toggleEvidenceModal(true)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 text-xs border border-emerald-500/50 shadow-lg backdrop-blur-md transition-all cursor-pointer">
+                <i data-lucide="receipt" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span class="hidden md:inline">Evidencias (Factura / Luz / CLOC / BD)</span>
+                <span class="md:hidden">Evidencias</span>
+            </button>
+            <button onclick="toggleRepoModal(true)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-950/85 hover:bg-indigo-900 text-indigo-200 text-xs border border-indigo-500/50 shadow-lg backdrop-blur-md transition-all cursor-pointer">
+                <i data-lucide="folder-archive" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span class="hidden md:inline">Documentos Oficiales</span>
+                <span class="md:hidden">Archivos</span>
+            </button>
+        </div>
+
+        <!-- CONTENEDOR DE LAS 14 DIAPOSITIVAS -->
+        <div id="slides-container">
+            
+            <!-- Slide 1: Portada y Caso de Estudio Emulado -->
+            <div class="slide glass-panel text-center">
+                <div class="flex justify-center gap-2 mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-blue-900/40 text-blue border border-blue-500/30">Universidad Nacional de Ingeniería (UNI) · DACTIC</span>
+                    <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-900/40 text-emerald border border-emerald-500/30">Ingeniería de Software 1 · Grupo 4S1-COM-S</span>
+                </div>
+                <i data-lucide="wrench" class="w-12 h-12 text-blue mx-auto mb-2"></i>
+                <h1 class="text-3xl md:text-5xl font-black tracking-tight text-white mb-2">
+                    Moto Repuestos <span class="text-emerald">El Centenario, S.A.</span>
+                </h1>
+                <p class="text-xs md:text-sm text-slate-300 max-w-3xl mx-auto mb-4">
+                    Defensa Integral de Viabilidad: Justificación Operativa, COCOMO II (<i>Post-Architecture</i>), Auditoría de Hardware Antiguo vs. Nuevo, Capacidad SRV1, Respaldo 3-2-1, Gastos Fijos (OPEX), Mantenimiento y Evolución de Software, Flujo de Capital (Años 0–5) y Contrato Legal en Managua.
+                </p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-left max-w-4xl mx-auto text-xs bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 mb-3">
+                    <div><span class="text-slate-400 block text-[11px]">Ubicación Auditada:</span><b class="text-white">Pista Suburbana – El Zumen</b><span class="text-[10px] text-slate-400 block">Distrito III, Managua (RUC J0310000123456)</span></div>
+                    <div><span class="text-slate-400 block text-[11px]">Volumen Transaccional:</span><b class="text-emerald">40 ventas/día (1,040/mes)</b><span class="text-[10px] text-slate-400 block">135 visitas/día · Conversión 29.6%</span></div>
+                    <div><span class="text-slate-400 block text-[11px]">Facturación Mensual:</span><b class="text-emerald">C$ 250,000 NIO ($6,793.48)</b><span class="text-[10px] text-slate-400 block">Ticket Promedio: C$ 240.38 ($6.53)</span></div>
+                    <div><span class="text-slate-400 block text-[11px]">Tasa Oficial / Docente:</span><b class="text-blue">36.8000 NIO/USD (BCN)</b><span class="text-[10px] text-slate-400 block">Docente: Ing. Roberto Alfaro</span></div>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2.5 text-[11px] text-slate-300 font-mono mb-3">
+                    <span class="px-3 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60">Ángel Antonio Alonso Suárez (2021-0087U)</span>
+                    <span class="px-3 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60">Noel Isaac Alemán Carballo (2022-0376U)</span>
+                    <span class="px-3 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60">Mendell Noé Parrales Molina (2020-1014U)</span>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=4" target="_blank" class="ref-link" title="Abrir Perfil Comercial y Estudio en Informe Financiero (Pág. 4)">
+                        <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                        <span>Informe Financiero (Pág. 4)</span>
+                        <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                    </a>
+                    <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=3" target="_blank" class="ref-link ref-infra" title="Abrir Contexto y Estrategia en Proforma (Pág. 3)">
+                        <i data-lucide="server" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Proforma Técnica (Pág. 3)</span>
+                        <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                    </a>
+                    <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=1" target="_blank" class="ref-link ref-legal" title="Abrir Comparecientes y Portada en Contrato (Pág. 1)">
+                        <i data-lucide="scale" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span>Contrato Legal (Pág. 1)</span>
+                        <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Slide 2: Contexto Operativo y Justificación de Clientes (Doble Enfoque) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="users" class="w-7 h-7 text-blue"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Justificación de Clientes (Doble Enfoque)</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=6" target="_blank" class="ref-link" title="Abrir Justificación Matemática M/M/c en Informe Financiero (Pág. 6)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §2 (Pág. 6)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=12" target="_blank" class="ref-link ref-infra" title="Abrir Topología de Red y Segmentación en Proforma (Pág. 12)">
+                            <i data-lucide="network" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §6 (Pág. 12)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-900/30 px-2.5 py-1 rounded-lg border border-emerald-500/20">M/M/c + LAN</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Enfoque Comercial -->
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="clock" class="w-4 h-4"></i> 1. Enfoque Comercial (Teoría de Colas M/M/c) <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=6" target="_blank" class="cite-pill" title="Ver justificación en Informe Financiero Pág. 6">pág. 6 ↗</a>
+                            </span>
+                            <span class="text-[10px] font-mono text-slate-400">λ_pico = 24 cl/h</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Franjas pico: 9:30–12:30 y 14:30–16:30 (5.0 h/día = 81.5% de ventas). Atención rápida (70% × 2.5 min) + consulta técnica con despiece (30% × 10 min) ⇒ <b>t̄<sub>s</sub> = 4.75 min/cliente</b> (<b>μ = 12.63 cl/h por caja</b>).
+                        </p>
+                        <div class="p-2 bg-slate-800/80 rounded-lg text-xs space-y-1 border-l-2 border-rose-500">
+                            <div class="flex justify-between"><span class="text-slate-400">Sin Proyecto (c = 2 cajas, ρ = 95.0%):</span><b class="text-rose-400">Espera W<sub>q</sub> = 22.8 min (L<sub>q</sub> = 9.1)</b></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Tasa Abandono (6.5% = 2.6 v/día):</span><b class="text-rose-400">-C$ 16,249.69/mes (-$5,298.84/año)</b></div>
+                        </div>
+                        <div class="p-2 bg-emerald-950/40 border border-emerald-500/30 rounded-lg text-xs space-y-1 border-l-2 border-emerald-400">
+                            <div class="flex justify-between"><span class="text-slate-300">Con Proyecto (c = 4 POS, ρ = 47.5%):</span><b class="text-emerald">Espera W<sub>q</sub> = 20.6 seg (L<sub>q</sub> = 0.14)</b></div>
+                            <div class="flex justify-between"><span class="text-slate-300">Ventas Netas Recuperadas (80%):</span><b class="text-emerald">+C$ 155,997.78/año (+$4,239.07 USD)</b></div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-[10px] text-slate-400">Año 5 (CAGR 12.5%): <b>72.1 ventas/día</b> absorbidas con <b>ρ = 85.5%</b>.</span>
+                            <button onclick="toggleEvidenceModal(true); switchEvidenceTab('factura');" class="py-1 px-2.5 rounded-lg bg-emerald-900/70 hover:bg-emerald-800 border border-emerald-500/50 text-emerald-200 text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer">
+                                <i data-lucide="receipt" class="w-3 h-3"></i> Ver Factura POS
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Enfoque Técnico / Red -->
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center gap-2 text-blue font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="network" class="w-4 h-4"></i> 2. Enfoque Técnico / Red (8 Clientes LAN)
+                            </span>
+                            <span class="text-[10px] font-mono text-slate-400">Switch TL-SG2428P</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Segmentación IEEE 802.1Q en 6 VLANs (<span class="font-mono text-slate-200">10.20.X.0/24</span>) gobernadas por Router/Firewall TP-Link ER605 (<span class="font-mono">R1</span>):
+                        </p>
+                        <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+                            <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50"><b class="text-emerald">POS01–04</b> (VLAN 20)<span class="text-slate-400 block font-mono text-[10px]">10.20.20.11–14 · 4 Cajas + LCT + CAJ</span></div>
+                            <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50"><b class="text-blue">BOD01</b> (VLAN 40)<span class="text-slate-400 block font-mono text-[10px]">10.20.40.10 · Bodega + Lector LCT05</span></div>
+                            <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50"><b class="text-amber-400">ADM01</b> (VLAN 30/99)<span class="text-slate-400 block font-mono text-[10px]">10.20.30.10 · Admin, Kardex, iDRAC9</span></div>
+                            <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50"><b class="text-purple-400">GER01 / PROP01</b> (VLAN 30)<span class="text-slate-400 block font-mono text-[10px]">10.20.30.21–22 · 2 Laptops Gerencia</span></div>
+                        </div>
+                        <div class="p-2 bg-blue-950/40 border border-blue-500/30 rounded-lg text-xs space-y-1">
+                            <div class="flex justify-between"><span class="text-slate-300">Concurrencia Crítica Cierre (17:15):</span><b class="text-blue">10 sesiones simultáneas (8 + 2 bg)</b></div>
+                            <div class="flex justify-between"><span class="text-slate-300">Dimensionamiento WSGI Gunicorn:</span><b class="text-white">(2×8 cores)+1 = 17 workers (&lt;45 ms)</b></div>
+                            <div class="flex justify-between"><span class="text-slate-300">Consumo RAM Pico en SRV1:</span><b class="text-white">14.4 GB usados de 32 GB ECC (45%)</b></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: COCOMO II (Enfoque Mixto Cuanti-Cualitativo Explícito) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="code-2" class="w-7 h-7 text-blue"></i>
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Costo de Desarrollo: Modelo COCOMO II</h2>
+                        <span class="text-xs text-emerald-400 font-semibold">Tipo de Análisis: ENFOQUE MIXTO (Cuantitativo + Cualitativo)</span>
+                    </div></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=8" target="_blank" class="ref-link" title="Abrir Estimación COCOMO II (Enfoque Mixto Post-Architecture) en Informe Financiero (Pág. 8)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §3 (Pág. 8)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=6" target="_blank" class="ref-link ref-legal" title="Abrir Cláusula V ($3,500 USD) en Contrato Legal (Pág. 6)">
+                            <i data-lucide="scale" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Contrato Cl. V (Pág. 6)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/40 font-bold">Enfoque Mixto</span>
+                        <span class="text-sm font-mono text-blue font-bold bg-blue-900/30 px-2.5 py-1 rounded-lg border border-blue-500/30">8.757 KLOC</span>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <!-- Cuadro de Demostración del Enfoque Mixto -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+                        <div class="bg-blue-950/40 p-2.5 rounded-xl border border-blue-500/40 space-y-1">
+                            <div class="flex justify-between items-center">
+                                <b class="text-blue-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5"><i data-lucide="calculator" class="w-3.5 h-3.5"></i> Dimensión Cuantitativa (Algorítmica / Objetiva)</b>
+                                <span class="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-200 text-[9px] font-mono">Matemática</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300">• <b>Tamaño Físico Auditado (CLOC v1.98):</b> <b>8,757 SLOC efectivas (8.757 KLOC)</b> contadas línea por línea en 126 archivos reales sin estimaciones al tanteo.</p>
+                            <p class="text-[11px] text-slate-300">• <b>Fórmula Matemática Exponencial:</b> E = 2.94 × (8.757)<sup>1.00</sup> × 0.35 = <b>9.0 Personas-Mes (PM)</b>.</p>
+                            <p class="text-[11px] text-slate-300">• <b>Conversión Monetaria Exacta:</b> 9.0 PM × $300/mes = <b>$2,700.00 USD</b> (C$ 99,360.00 NIO a TC 36.80).</p>
+                        </div>
+                        <div class="bg-purple-950/40 p-2.5 rounded-xl border border-purple-500/40 space-y-1">
+                            <div class="flex justify-between items-center">
+                                <b class="text-purple-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5"><i data-lucide="sliders" class="w-3.5 h-3.5"></i> Dimensión Cualitativa (Heurística / Juicio de Expertos)</b>
+                                <span class="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-200 text-[9px] font-mono">Ponderación</span>
+                            </div>
+                            <p class="text-[11px] text-slate-300">• <b>5 Factores de Escala (SF):</b> Valoración cualitativa de precedencia (PREC Alta), flexibilidad (FLEX Alta), cohesión del equipo de 3 desarrolladores (TEAM Muy Alta) y madurez (PMAT) ⇒ <b>B = 1.00 (Escala Lineal)</b>.</p>
+                            <p class="text-[11px] text-slate-300">• <b>17 Cost Drivers (EM):</b> Ponderación subjetiva de habilidades (ACAP/PCAP Alta), uso de herramientas CASE (TOOL) y reuso del framework Django 5.x + ORM ⇒ <b>EAF = 0.35</b>.</p>
+                        </div>
+                    </div>
+
+                    <!-- Nivel y Modo -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-700 flex justify-between items-center">
+                            <span><b>Submodelo COCOMO II:</b> <span class="text-blue font-mono font-bold">Post-Architecture</span> (código y capas terminadas).</span>
+                        </div>
+                        <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-700 flex justify-between items-center">
+                            <span><b>Modo de Desarrollo:</b> <span class="text-emerald font-mono font-bold">Orgánico Ajustado</span> (equipo pequeño, dominio conocido).</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div id="loc" class="stack" style="height:1.25rem"></div>
+                        <div class="flex justify-between items-center text-[11px] text-slate-400 mt-1">
+                            <span>Desglose CLOC: Python 8,046 (91.9%) · HTML 591 (6.7%) · Markdown 53 · PowerShell 50 · CSS 15 · Texto 2 = <b>8,757 SLOC</b></span>
+                            <button onclick="toggleEvidenceModal(true); switchEvidenceTab('gastos');" class="text-blue hover:text-blue-300 font-mono font-bold flex items-center gap-1 cursor-pointer"><i data-lucide="terminal" class="w-3 h-3"></i> Ver Captura CLOC</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60 font-mono space-y-1 text-slate-300">
+                            <div class="text-[11px] text-slate-400 font-sans font-bold mb-1">Fórmula Algorítmica Post-Architecture:</div>
+                            <p><span class="text-blue">E</span> = A × (KLOC)<sup>B</sup> × EAF = 2.94 × (8.757)<sup>1.00</sup> × 0.35 = <b class="text-white">9.0 PM</b></p>
+                            <p><span class="text-blue">T</span> = 9.0 PM / 3 Desarrolladores = <b class="text-white">3.0 Meses Calendario</b></p>
+                            <p><span class="text-emerald">Costo SW</span> = 9.0 PM × $300.00/mes = <b class="text-emerald text-sm">$2,700.00 USD</b> (C$ 99,360 NIO)</p>
+                        </div>
+                        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60 text-[11px] space-y-1 text-slate-300">
+                            <div class="font-bold text-white mb-1">Justificación de Parámetros (¿De dónde salen B y EAF?):</div>
+                            <p>• <b>Exponente B = 1.00:</b> <span class="font-mono">B = 0.91 + 0.01×∑SF<sub>j</sub> = 0.91 + 0.01(9.0) = 1.00</span> (PREC=2.48, FLEX=2.03, RESL=1.41, TEAM=1.10, PMAT=1.98 ⇒ escala lineal sin penalización).</p>
+                            <p>• <b>Multiplicador EAF = 0.35:</b> <span class="font-mono">∏ EM<sub>i</sub> = 0.35</span> por uso de herramientas CASE y ORM Django (<span class="font-mono">TOOL=0.72, PLEX=0.85, PCAP=0.76, ACAP=0.85</span>).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Inventario de Hardware Antiguo vs. Nuevo -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="boxes" class="w-7 h-7 text-blue"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Hardware Antiguo vs. Proforma Nueva</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=10" target="_blank" class="ref-link" title="Abrir Inventario Hardware Antiguo en Informe Financiero (Pág. 10)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §4 (Pág. 10)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=4" target="_blank" class="ref-link ref-infra" title="Abrir Auditoría Hardware Antiguo y Consumo en Proforma (Pág. 4-5)">
+                            <i data-lucide="server" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §2 (Pág. 4)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-amber-300 bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-500/30">Ley 822 Art. 44</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Hardware Antiguo -->
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2 text-xs">
+                        <h3 class="text-amber-400 font-bold flex items-center gap-2"><i data-lucide="archive" class="w-4 h-4"></i> Activos Preexistentes en la Empresa (Auditados)</h3>
+                        <div class="p-2 bg-slate-800/70 rounded-lg space-y-1 border-l-2 border-emerald-400">
+                            <div class="flex justify-between"><b class="text-emerald">1. Impresora Canon MF445dw (PRN1):</b><span class="text-white font-mono">$245.00 en libros</span></div>
+                            <p class="text-[11px] text-slate-400">Adquirida mayo 2025 ($350 hist. − $105 deprec. acum. de 1.5 años). <b>Reutilizada 100% en VLAN 50 (<span class="font-mono">10.20.50.10</span>)</b> en toma protegida independiente (pico fusor 1,330 W). Ahorra comprar impresora nueva (<b>$350–$450 USD</b>).</p>
+                        </div>
+                        <div class="p-2 bg-slate-800/70 rounded-lg space-y-1 border-l-2 border-rose-400">
+                            <div class="flex justify-between"><b class="text-rose-400">2. 2x PCs Clones Core 2 Duo (&gt;6 años):</b><span class="text-slate-400 font-mono">$80.00 residual</span></div>
+                            <p class="text-[11px] text-slate-400">Costo hist. $600, depreciadas al 100% en libros ($0). HDD con sectores dañados. 1x Taller offline (manuales PDF); 1x baja contable.</p>
+                        </div>
+                        <div class="p-2 bg-slate-800/70 rounded-lg space-y-1 border-l-2 border-blue-400">
+                            <div class="flex justify-between"><b class="text-blue">3. Módem ISP + Regletas Domésticas:</b><span class="text-slate-400 font-mono">$0.00 en libros</span></div>
+                            <p class="text-[11px] text-slate-400">Módem ISP pasa a Modo Puente (Bridge L2) hacia router ER605; 3 regletas viejas ($45 hist.) desechadas por riesgo de cortocircuito.</p>
+                        </div>
+                        <div class="flex justify-between p-2 bg-amber-950/30 border border-amber-500/30 rounded-lg">
+                            <span class="text-amber-200">Valor Contable Preexistente ($995 hist. − $750 dep.):</span><b class="text-amber-400 font-mono">$325.00 USD (C$ 11,960)</b>
+                        </div>
+                    </div>
+
+                    <!-- Hardware Nuevo Ex-Works -->
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-blue font-bold text-xs flex items-center gap-2"><i data-lucide="shopping-cart" class="w-4 h-4"></i> 19 Líneas Nuevas Cotizadas (Amazon EE. UU.)</h3>
+                            <span class="text-xs font-mono text-blue font-bold">$7,770.09 Ex-Works</span>
+                        </div>
+                        <div id="items" class="overflow-y-auto p-2 bg-slate-800/60 rounded-xl text-xs space-y-1 border border-slate-700/50" style="max-height:36vh"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Importación Aduanera (DGA) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="ship" class="w-7 h-7 text-blue"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Importación Aduanera a Nicaragua (DGA)</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=11" target="_blank" class="ref-link" title="Abrir Régimen Aduanero DGA en Informe Financiero (Pág. 11)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §5 (Pág. 11)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=19" target="_blank" class="ref-link ref-infra" title="Abrir Liquidación Arancelaria DGA y Factores en Proforma (Pág. 19)">
+                            <i data-lucide="ship" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §11 (Pág. 19)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded border border-emerald-500/30 font-bold">Factor 1.2832</span>
+                    </div>
+                </div>
+                <div id="imp" class="stack mb-3" style="height:2.1rem"></div>
+                <div id="impl" class="text-xs mb-3"></div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 text-center"><p class="text-slate-400 text-xs mb-0.5">Valor CIF (Base Aduanera)</p><p class="text-xl font-bold text-blue" data-count="8686.64" data-dec="2" data-pre="$">$8,686.64</p><span class="text-[10px] text-slate-400 font-mono">Ex-Works + Flete + Seguro</span></div>
+                    <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 text-center"><p class="text-slate-400 text-xs mb-0.5">Base Imponible IVA (CIF+DAI)</p><p class="text-xl font-bold text-white" data-count="8836.64" data-dec="2" data-pre="$">$8,836.64</p><span class="text-[10px] text-slate-400 font-mono">DAI $150 (SAC 8471 0% PC)</span></div>
+                    <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50 text-center"><p class="text-slate-400 text-xs mb-0.5">Costo Nacionalizado Managua</p><p class="text-xl font-bold text-emerald" data-count="10162.14" data-dec="2" data-pre="$">$10,162.14</p><span class="text-[10px] text-slate-400 font-mono">C$ 373,966.75 NIO (+30.8%)</span></div>
+                </div>
+                <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50 text-xs text-slate-300 mt-3 space-y-1">
+                    <p>• <b>Justificación Vía Marítima Consolidada ($800.00):</b> Carga total de 250–300 lb (15–20 días hábiles). Se descartó la vía aérea express ($7.50/lb) por el alto peso del gabinete/servidor y las restricciones IATA sobre la batería de plomo-ácido del UPS CyberPower CP1500PFCLCD.</p>
+                    <p>• <b>Liquidación Oficial DGA:</b> Ex-Works $7,770.09 + Flete $800.00 + Seguro (1.5%) $116.55 = <b>CIF $8,686.64</b>; + DAI $150.00 + IVA Aduanero (15% s/ CIF+DAI) $1,325.50 = <b>$10,162.14 USD</b>.</p>
+                </div>
+            </div>
+
+            <!-- Slide 6: Presupuesto Total de Inversión (Dualidad Patrimonial) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="wallet" class="w-7 h-7 text-emerald"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Presupuesto de Inversión y Dualidad Patrimonial</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=13" target="_blank" class="ref-link" title="Abrir Presupuesto Total y Dualidad Patrimonial en Informe Financiero (Pág. 13)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §6 (Pág. 13)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=21" target="_blank" class="ref-link ref-infra" title="Abrir Dualidad Presupuestaria de TI en Proforma (Pág. 21)">
+                            <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §12 (Pág. 21)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">I₀ = $13,662.14</span>
+                    </div>
+                </div>
+                <div id="cap" class="stack mb-2.5" style="height:2.1rem"></div>
+                <div id="capl" class="text-xs mb-3"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-blue-950/40 p-3.5 rounded-xl border border-blue-500/30 text-center">
+                        <span class="text-xs text-blue-300 uppercase tracking-wider font-semibold block mb-1">A. Inversión Incremental en Efectivo (I<sub>0</sub> Desembolsado)</span>
+                        <p class="text-3xl font-extrabold text-blue" data-count="13662.14" data-dec="2" data-pre="$">$13,662.14 USD</p>
+                        <p class="text-[11px] text-slate-300 mt-1 font-mono">C$ 502,766.75 NIO ($10,162.14 HW + $2,700 SW + $800 Inst.)</p>
+                        <span class="text-[10px] text-blue-200 block mt-1">Base del Flujo de Caja Año 0 para VAN, TIR, ROI y Payback</span>
+                    </div>
+                    <div class="bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-500/30 text-center">
+                        <span class="text-xs text-emerald-300 uppercase tracking-wider font-semibold block mb-1">B. Patrimonio Tecnológico Total en Operación</span>
+                        <p class="text-3xl font-extrabold text-emerald" data-count="13987.14" data-dec="2" data-pre="$">$13,987.14 USD</p>
+                        <p class="text-[11px] text-slate-300 mt-1 font-mono">C$ 514,726.75 NIO ($325 HW Preexistente + $13,662.14 I<sub>0</sub>)</p>
+                        <span class="text-[10px] text-emerald-200 block mt-1">A valor histórico de adquisición el parque suma $14,612.14 USD</span>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 mt-3 leading-relaxed bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
+                    <b>Conciliación del Hardware Antiguo en Finanzas:</b> Sumar los $325.00 USD en libros muestra el valor real de los activos que operan en el local ($13,987.14 USD), mientras que la reutilización de la impresora Canon MF445dw ahorró desembolsar $350–$450 USD adicionales en el Año 0. La depreciación fiscal deducible (Ley 822, 20% anual a 5 años) es de <b>$2,572.43 USD/año</b> ($2,032.43 HW + $540 SW), generando un <b>escudo fiscal de $771.73 USD/año</b> (30% IR).
+                </p>
+            </div>
+
+            <!-- Slide 7: Software SRV1 y Capacidad a 5 Años -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="server" class="w-7 h-7 text-blue"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Software Instalado en SRV1 y Capacidad a 5 Años</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=14" target="_blank" class="ref-link" title="Abrir Software SRV1 y Capacidad a 5 Años en Informe Financiero (Pág. 14)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §7 (Pág. 14)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=8" target="_blank" class="ref-link ref-infra" title="Abrir PostgreSQL 16 y Capacidad de Almacenamiento en Proforma (Pág. 8)">
+                            <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §4 (Pág. 8)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-900/30 px-2.5 py-1 rounded-lg">Licencias $0.00 FOSS</span>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                        <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50"><b class="text-white">Debian 12 LTS</b><span class="text-slate-400 block text-[10px]">Kernel 6.1 Minimal (7.2 GB)</span></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50"><b class="text-white">PostgreSQL 18.4</b><span class="text-slate-400 block text-[10px]">shared_buffers = 8GB ECC</span></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50"><b class="text-white">Django 5.x + Python</b><span class="text-slate-400 block text-[10px]">Gunicorn 17 Workers WSGI</span></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50"><b class="text-white">Nginx 1.22+ TLS 1.3</b><span class="text-slate-400 block text-[10px]">Proxy Inverso + Estáticos</span></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50"><b class="text-white">pgBackRest + UFW</b><span class="text-slate-400 block text-[10px]">WAL + Fail2Ban + SMART</span></div>
+                    </div>
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 space-y-2">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span>Capacidad Total en Disco SRV1 (2× 1TB SSD Enterprise en RAID 1 = 1,000 GB útiles · 84,146 facturas a 5 años)</span>
+                            <b class="text-emerald font-mono">58 GB Ocupados (5.8%) · 942 GB Libres (94.2%)</b>
+                        </div>
+                        <div id="sto" class="stack" style="height:1.1rem"></div>
+                        <div class="flex justify-between text-[11px] text-slate-400 pt-1">
+                            <span>Zoom al Desglose de los 58 GB Ocupados al Año 5:</span>
+                            <span class="font-mono text-slate-200">BD 4 GB (1.8 Tablas + 2.2 Índices) · WAL 4 GB · PDF 8 GB · SO/Logs 15 GB · Backups 15 GB · Reserva 12 GB</span>
+                        </div>
+                        <div id="stoz" class="stack" style="height:1.1rem"></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div class="bg-slate-800/50 p-2 rounded-xl border border-slate-700/50"><span class="text-slate-400 block text-[10px]">Caché en Memoria RAM (32 GB ECC)</span><b class="text-emerald text-sm">100% de la BD (4 GB) en RAM</b><span class="text-slate-400 block text-[10px]">&gt;99.8% hit ratio (latencia &lt;5 ms)</span></div>
+                        <div class="bg-slate-800/50 p-2 rounded-xl border border-slate-700/50"><span class="text-slate-400 block text-[10px]">Carga Media de CPU (Xeon 8c)</span><b class="text-blue text-sm">&lt; 12% en jornada activa</b><span class="text-slate-400 block text-[10px]">&gt;88% de margen de procesamiento</span></div>
+                        <div class="bg-slate-800/50 p-2 rounded-xl border border-slate-700/50"><span class="text-slate-400 block text-[10px]">Desgaste Físico de SSD (TBW)</span><b class="text-emerald text-sm">45.6 TBW / 600 TBW</b><span class="text-slate-400 block text-[10px]">Solo 7.6% desgaste en 5 años (92.4% vida)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: Arquitectura de Respaldo 3-2-1 -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="shield" class="w-7 h-7 text-emerald"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Arquitectura de Respaldo 3-2-1 y Continuidad</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=16" target="_blank" class="ref-link" title="Abrir Estrategia de Respaldo 3-2-1 y RPO/RTO en Informe Financiero (Pág. 16)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §8 (Pág. 16)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=10" target="_blank" class="ref-link ref-infra" title="Abrir NAS Synology y Respaldo Btrfs en Proforma (Pág. 10)">
+                            <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §5 (Pág. 10)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-900/30 px-2.5 py-1 rounded-lg">RPO ≤ 15 min · RTO ≤ 2 h</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-blue-500/30 space-y-1.5">
+                        <div class="flex items-center gap-2 text-blue font-bold"><i data-lucide="server" class="w-4 h-4"></i> Copia 1: Producción (En Caliente)</div>
+                        <p class="text-white font-semibold">SRV1 Dell T150 (10.20.10.10)</p>
+                        <p class="text-slate-400 text-[11px]">Arreglo espejo <b>RAID 1 por hardware</b> (controladora PERC H355) con 2× 1TB SSD Enterprise. Ante avería de 1 SSD, el servidor continúa operando con <b>RTO = 0 y RPO = 0</b>.</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-emerald-500/30 space-y-1.5">
+                        <div class="flex items-center gap-2 text-emerald font-bold"><i data-lucide="hard-drive" class="w-4 h-4"></i> Copia 2: Red Local Aislada</div>
+                        <p class="text-white font-semibold">NAS Synology DS224+ (10.20.10.20)</p>
+                        <p class="text-slate-400 text-[11px]">VLAN 10, RAID 1 con 2× 2TB Seagate IronWolf CMR ($711.17). Streaming WAL cada 15 min, volcado diario 23:00 (<span class="font-mono">zstd</span>), validación criptográfica <b>SHA-256</b> y snapshots <b>Btrfs WORM inmutables</b> anti-ransomware.</p>
+                    </div>
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-purple-500/30 space-y-1.5">
+                        <div class="flex items-center gap-2 text-purple-400 font-bold"><i data-lucide="lock" class="w-4 h-4"></i> Copia 3: Fuera de Sitio (Frío)</div>
+                        <p class="text-white font-semibold">Disco USB 2TB BKP-USB1 ($80.00)</p>
+                        <p class="text-slate-400 text-[11px]">Cifrado completo <b>LUKS2 (AES-256-XTS)</b> sincronizado cada viernes (18:30). Desconectado físicamente (<i>Air-Gapped</i>) y custodiado en caja fuerte ignífuga externa por Gerencia.</p>
+                    </div>
+                </div>
+                <div class="mt-3 p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 text-xs text-slate-300">
+                    <div class="flex justify-between border-b border-slate-700/50 pb-1 mb-1.5 font-semibold">
+                        <span>Escenario de Contingencia (Simulacro Semestral en VM Aislada: Junio y Diciembre)</span><span>RPO (Pérdida Máxima)</span><span>RTO (Recuperación)</span>
+                    </div>
+                    <div class="flex justify-between py-0.5"><span class="text-slate-400">Falla física de 1 unidad SSD en SRV1</span><span class="text-emerald font-mono">0 segundos</span><span class="text-emerald font-mono">0 minutos (Transparente)</span></div>
+                    <div class="flex justify-between py-0.5"><span class="text-slate-400">Corrupción lógica / Error humano en tabla</span><span class="text-blue font-mono">≤ 15 minutos (Vía WAL)</span><span class="text-blue font-mono">≤ 30 minutos (PITR)</span></div>
+                    <div class="flex justify-between py-0.5"><span class="text-slate-400">Siniestro Catastrófico / Robo físico de SRV1</span><span class="text-amber-400 font-mono">≤ 24 horas (NAS/USB)</span><span class="text-amber-400 font-mono">≤ 120 minutos (2 horas)</span></div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Consumibles y Comparación Cuantitativa de Gastos (Antes vs. Después) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="printer" class="w-7 h-7 text-blue"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">TCO Consumibles y Comparativa (Antes vs. Después)</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=17" target="_blank" class="ref-link" title="Abrir TCO Consumibles y Comparativa Antes vs Después en Informe Financiero (Pág. 17)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §9 (Pág. 17)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=15" target="_blank" class="ref-link ref-infra" title="Abrir TCO Consumibles Tóner Canon en Proforma (Pág. 15)">
+                            <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §9 (Pág. 15)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-900/30 px-2.5 py-1 rounded-lg">+$10,400 USD/año</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <h3 class="text-blue font-bold flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Unificación de Consumibles (SUM-PRN vs. OPEX)</h3>
+                        <p class="text-slate-300 text-[11px] leading-relaxed">
+                            <b>Conciliación:</b> El valor preliminar de "~$200" provenía de redondear el lote inicial de arranque <b>SUM-PRN ($206.99 USD)</b> incluido en el CAPEX = 1 Tóner Canon 057 Estándar ($166.99) + 1 Caja de 5,000 hojas Bond ($40.00).
+                        </p>
+                        <div class="p-2 bg-slate-800 rounded space-y-1 text-[11px]">
+                            <div class="flex justify-between"><span>Canon 057 Estándar (3,100 págs., 2.3 m):</span><b class="font-mono text-slate-300">$166.99 ($0.0538/pág)</b></div>
+                            <div class="flex justify-between"><span>Canon 057H Alto Rend. (10,000 págs., 7.5 m):</span><b class="font-mono text-white">$348.65 ($0.0348/pág)</b></div>
+                            <div class="flex justify-between"><span>Compatible 057H Certif. (10,000 págs., 7.5 m):</span><b class="font-mono text-emerald">$38.95 ($0.0039/pág)</b></div>
+                            <div class="flex justify-between"><span>Papel Bond (1,340 págs./mes: 1,040 fact + 300 rep):</span><b class="font-mono text-white">$10.72 USD/mes ($0.008/h)</b></div>
+                        </div>
+                        <p class="text-[11px] text-emerald-400">En OPEX (<b>$45.00/mes</b>): Papel ($10.72) + Tóner Compatible 057H ($5.22) = $15.94/mes directos, reservando <b>$29.06/mes</b> para rodillos, fusor y mantenimiento de PRN1.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <h3 class="text-emerald font-bold flex items-center gap-2"><i data-lucide="scale" class="w-4 h-4"></i> Comparación Cuantitativa Anual (Antes vs. Después)</h3>
+                        <p class="text-[11px] text-slate-400">Sobre facturación anual auditada de <b>C$ 3,000,000 NIO ($81,516.00 USD/año)</b>:</p>
+                        <div class="space-y-1.5 text-[11px]">
+                            <div class="p-2 bg-slate-800 rounded flex justify-between items-center">
+                                <div><b>1. Mermas de Inventario (4.0% → 0.5%)</b><span class="block text-[10px] text-slate-400">Antes: $3,260.64/año · Con Kardex ACID: $407.58/año</span></div>
+                                <b class="text-emerald font-mono">+$2,853.06 USD</b>
+                            </div>
+                            <div class="p-2 bg-slate-800 rounded flex justify-between items-center">
+                                <div><b>2. Abandono en Mostrador (6.5% → 1.3%)</b><span class="block text-[10px] text-slate-400">Antes (2 cajas): $5,298.84/año · Con 4 POS: $1,059.77/año</span></div>
+                                <b class="text-emerald font-mono">+$4,239.07 USD</b>
+                            </div>
+                            <div class="p-2 bg-slate-800 rounded flex justify-between items-center">
+                                <div><b>3. Errores de Precios y Reprocesos</b><span class="block text-[10px] text-slate-400">Antes (manual): $4,500.00/año · Con sistema: $1,192.13/año</span></div>
+                                <b class="text-emerald font-mono">+$3,307.87 USD</b>
+                            </div>
+                            <div class="p-2 bg-emerald-950/40 border border-emerald-500/30 rounded flex justify-between items-center text-xs font-bold">
+                                <span class="text-emerald-300">BENEFICIO BRUTO ANUAL (C$ 382,720 NIO):</span>
+                                <span class="text-emerald font-mono">+$10,400.00 USD</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 10 (NUEVA): Desglose Auditado de Gastos Fijos Operativos (OPEX: Luz, Internet, Consumibles, Soporte) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="zap" class="w-7 h-7 text-amber-400"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Auditoría de Gastos Fijos Operativos (OPEX: $200/mes)</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=18" target="_blank" class="ref-link" title="Abrir Auditoría OPEX y Tarifa Eléctrica T-B Disnorte-Dissur en Informe Financiero (Pág. 18)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §10 (Pág. 18)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf#page=5" target="_blank" class="ref-link ref-infra" title="Abrir Comparativa Energética 445W en Proforma (Pág. 5)">
+                            <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Proforma §2.2 (Pág. 5)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-rose-400 bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-500/30">-$2,400 USD/año</span>
+                    </div>
+                </div>
+                <div id="opx" class="stack mb-2.5" style="height:1.5rem"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
+                    <!-- Luz Eléctrica Auditada -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-amber-500/30 space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <b class="text-amber-400 flex items-center gap-1.5"><i data-lucide="zap" class="w-4 h-4"></i> 1. Energía Eléctrica TI (Tarifa Comercial T-B)</b>
+                            <span class="font-mono font-bold text-white">$40.00/mes ($480/año)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300">Cálculo físico exacto a tarifa comercial Managua (<b>$0.195 USD/kWh = C$ 7.176 NIO/kWh</b>):</p>
+                        <div class="p-2 bg-slate-800/80 rounded font-mono text-[10px] space-y-0.5 text-slate-300">
+                            <div class="flex justify-between"><span>• Rack 24/7 (SRV1 110W + SW1/AP1 22W + NAS 12W + R1/UPS 8W = 152W × 720h):</span><b class="text-white">109.44 kWh</b></div>
+                            <div class="flex justify-between"><span>• Clientes Jornada (6 PCs/Mon 312W + 2 Lap 34W + PRN1 23W = 369W × 247h):</span><b class="text-white">91.14 kWh</b></div>
+                            <div class="flex justify-between border-t border-slate-700 pt-0.5 text-amber-300"><span>Consumo Total: 200.58 kWh/mes × $0.195/kWh = $39.11 USD (C$ 1,439.25)</span><b>≈ $40.00/mes</b></div>
+                        </div>
+                        <p class="text-[10px] text-slate-400"><b>Vs. Hardware Antiguo:</b> Las 2 PCs viejas Core 2 Duo consumían 92.46 kWh/mes ($18.03/mes = 134.5 W/puesto). El sistema nuevo baja a <b>62.25 W/puesto (-53.7% más eficiente)</b> por solo +$21.08/mes adicionales.</p>
+                    </div>
+
+                    <!-- Internet + Consumibles + Soporte -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 space-y-2">
+                        <div class="p-2 bg-slate-800/70 rounded-lg border-l-2 border-blue-400">
+                            <div class="flex justify-between">
+                                <b class="text-blue flex items-center gap-1"><i data-lucide="wifi" class="w-3.5 h-3.5"></i> 2. Internet Fibra Óptica Corporativo ISP</b>
+                                <span class="font-mono font-bold text-white">$50.00/mes ($600/año)</span>
+                            </div>
+                            <p class="text-[10px] text-slate-300 mt-0.5">Enlace simétrico 100 Mbps (Claro Empresas / Tigo Business en El Zumen: $43.48 + 15% IVA = C$ 1,840 NIO/mes). <i>Si cae el ISP externo, la red LAN local sigue facturando al 100% sin interrupción.</i></p>
+                        </div>
+                        <div class="p-2 bg-slate-800/70 rounded-lg border-l-2 border-purple-400">
+                            <div class="flex justify-between">
+                                <b class="text-purple-400 flex items-center gap-1"><i data-lucide="printer" class="w-3.5 h-3.5"></i> 3. Consumibles Fijos de Impresión</b>
+                                <span class="font-mono font-bold text-white">$45.00/mes ($540/año)</span>
+                            </div>
+                            <p class="text-[10px] text-slate-300 mt-0.5">Cubre 1,340 págs./mes (C$ 1,656 NIO/mes): Papel Bond ($10.72) + Tóner 057H ($5.22) + Fondo de reserva para tambor/fusor de PRN1 ($29.06).</p>
+                        </div>
+                        <div class="p-2 bg-slate-800/70 rounded-lg border-l-2 border-emerald-400">
+                            <div class="flex justify-between">
+                                <b class="text-emerald flex items-center gap-1"><i data-lucide="wrench" class="w-3.5 h-3.5"></i> 4. Póliza de Mantenimiento y Soporte TI</b>
+                                <span class="font-mono font-bold text-white">$65.00/mes ($780/año)</span>
+                            </div>
+                            <p class="text-[10px] text-slate-300 mt-0.5">C$ 2,392 NIO/mes: Mantenimiento preventivo, correctivo SLA y adaptativo (ver Diapositiva 11).</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2.5 flex justify-between items-center bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 text-xs">
+                    <span><b>Total Gastos Fijos Operativos (OPEX):</b> $200.00 USD/mes = C$ 7,360.00 NIO/mes = <b>$2,400.00 USD/año (C$ 88,320 NIO/año)</b></span>
+                    <button onclick="toggleEvidenceModal(true); switchEvidenceTab('gastos');" class="py-1 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer transition-all">
+                        <i data-lucide="file-check" class="w-3.5 h-3.5"></i> Ver Recibos de Luz, Internet y Póliza
+                    </button>
+                </div>
+            </div>
+
+            <!-- Slide 11 (NUEVA): Mantenimiento de Software (ISO/IEC 14764) y Desarrollo de Nuevas Funciones (Evolutivo) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="git-branch-plus" class="w-7 h-7 text-emerald"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Mantenimiento (ISO 14764) y Nuevas Funciones</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=19" target="_blank" class="ref-link" title="Abrir Mantenimiento ISO 14764 y COCOMO ACT en Informe Financiero (Pág. 19)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §10.2 (Pág. 19)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=6" target="_blank" class="ref-link ref-legal" title="Abrir Cláusula VI (Garantía, Mantenimiento y Nuevas Funciones) en Contrato (Pág. 6)">
+                            <i data-lucide="scale" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Contrato Cl. VI (Pág. 6)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-blue bg-blue-900/30 px-2.5 py-1 rounded-lg">COCOMO II ACT</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <!-- Mantenimiento Operativo Recurrente ($65/mes) -->
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <h3 class="text-emerald font-bold flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Régimen de Garantía y Mantenimiento ($65/mes)</h3>
+                        <div class="p-2 bg-emerald-950/30 border border-emerald-500/30 rounded-lg">
+                            <b class="text-emerald-300 block">Fase 1: Garantía Técnica Inicial (Meses 1 a 3 — $0.00 USD)</b>
+                            <p class="text-[11px] text-slate-300">90 días naturales (Cláusula VI del Contrato) a partir del Acta de Recepción. Cubre al 100% cualquier <i>bug</i> intrínseco de código o cálculo de Kardex.</p>
+                        </div>
+                        <div class="p-2 bg-slate-800/80 rounded-lg space-y-1 text-[11px]">
+                            <b class="text-white block">Fase 2: Póliza OPEX Post-Garantía ($65.00 USD/mes = $780/año)</b>
+                            <p>• <b class="text-blue">Preventivo ($20/mes):</b> Optimización PostgreSQL (<span class="font-mono">VACUUM ANALYZE</span> / <span class="font-mono">REINDEX</span>), monitoreo S.M.A.R.T. de SSDs, limpieza física de rack y simulacro semestral de restauración 3-2-1.</p>
+                            <p>• <b class="text-amber-400">Correctivo SLA ($25/mes):</b> Atención garantizada Nivel 1 Crítico (≤4h resp. / ≤12h sol.), Nivel 2 Medio (≤8h) y Nivel 3 Leve (≤24h).</p>
+                            <p>• <b class="text-purple-400">Adaptativo Menor ($20/mes):</b> Parches de seguridad Debian 12 LTS, Nginx y Django 5.x LTS, y ajustes menores en plantillas de factura o tasas DGI/ALMA.</p>
+                        </div>
+                    </div>
+
+                    <!-- Desarrollo de Nuevas Funciones (Evolutivo / Perfectivo) -->
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <h3 class="text-blue font-bold flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4"></i> Desarrollo de Nuevas Funciones (COCOMO II Evolutivo)</h3>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            Gracias al diseño con <b>Principios SOLID</b> (<span class="font-mono">01_Informe_SOLID.pdf</span>: <b>Principio Abierto/Cerrado OCP</b> y Monolito Modular en 4 Capas), se pueden agregar nuevos módulos sin modificar el núcleo transaccional. Se cotizan mediante el modelo <b>COCOMO II de Tráfico de Cambio Anual (ACT)</b> a <b>$300.00/PM</b>:
+                        </p>
+                        <div class="p-1.5 bg-slate-950 rounded border border-slate-700 font-mono text-[10px] text-center text-blue-300">
+                            E<sub>evolutivo</sub> = ACT × E<sub>base</sub> (9.0 PM) &nbsp;|&nbsp; ACT = SLOC<sub>nuevas</sub> / 8,757 SLOC
+                        </div>
+                        <div class="space-y-1 text-[11px]">
+                            <div class="p-1.5 bg-slate-800 rounded flex justify-between items-center">
+                                <span><b>1. Portal Web B2B Pedidos Talleres</b> (+650 SLOC, ACT 7.4% = 0.67 PM):</span>
+                                <b class="text-emerald font-mono">$200.00 USD</b>
+                            </div>
+                            <div class="p-1.5 bg-slate-800 rounded flex justify-between items-center">
+                                <span><b>2. Facturación Electrónica DGI / POS Bancario</b> (+950 SLOC, 0.98 PM):</span>
+                                <b class="text-emerald font-mono">$295.00 USD</b>
+                            </div>
+                            <div class="p-1.5 bg-slate-800 rounded flex justify-between items-center">
+                                <span><b>3. App Móvil PWA Conteo Bodega + Telegram</b> (+550 SLOC, 0.57 PM):</span>
+                                <b class="text-emerald font-mono">$170.00 USD</b>
+                            </div>
+                            <div class="p-1.5 bg-slate-800 rounded flex justify-between items-center">
+                                <span><b>4. Dashboard BI Predictivo de Stock por Marca</b> (+480 SLOC, 0.49 PM):</span>
+                                <b class="text-emerald font-mono">$148.00 USD</b>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 12: Flujo de Caja Neto y Tabla Maestra del Flujo de Capital (Años 0 a 5) -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="circle-dollar-sign" class="w-7 h-7 text-emerald"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Flujo de Capital Proyectado (Años 0 al 5)</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=20" target="_blank" class="ref-link" title="Abrir Tabla Maestra de Flujo de Efectivo en Informe Financiero (Pág. 20)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §11 (Pág. 20)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-900/30 px-2.5 py-1 rounded-lg">FC = +$8,000/año</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-3 text-center">
+                    <div class="bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
+                        <span class="text-[10px] text-slate-400 uppercase block">Beneficios Brutos Anuales</span>
+                        <p class="text-2xl font-extrabold text-emerald" data-count="10400" data-pre="+$" data-suf=" USD">+$10,400 USD</p>
+                        <span class="text-[10px] text-slate-400 font-mono">+C$ 382,720 NIO/año (+$866.67/mes)</span>
+                    </div>
+                    <div class="bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
+                        <span class="text-[10px] text-slate-400 uppercase block">Gastos Fijos Anuales (OPEX)</span>
+                        <p class="text-2xl font-extrabold text-rose-400" data-count="2400" data-pre="-$" data-suf=" USD">-$2,400 USD</p>
+                        <span class="text-[10px] text-slate-400 font-mono">-C$ 88,320 NIO/año (-$200.00/mes)</span>
+                    </div>
+                    <div class="bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/40">
+                        <span class="text-[10px] text-emerald-300 uppercase font-bold block">Flujo de Caja Neto Anual (FC)</span>
+                        <p class="text-2xl font-black text-emerald" data-count="8000" data-pre="+$" data-suf=" USD">+$8,000 USD</p>
+                        <span class="text-[10px] text-slate-200 font-mono">+C$ 294,400 NIO/año (+$666.67/mes)</span>
+                    </div>
+                </div>
+
+                <!-- Tabla Maestra Completa Año 0 a Año 5 -->
+                <div class="overflow-x-auto bg-slate-950/80 rounded-xl border border-slate-700/70 p-2">
+                    <table class="w-full text-right font-mono text-[11px] border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-300 bg-slate-900/90">
+                                <th class="p-1.5 text-left font-sans">Concepto Financiero (USD)</th>
+                                <th class="p-1.5">Año 0 (2026)</th>
+                                <th class="p-1.5">Año 1 (2027)</th>
+                                <th class="p-1.5">Año 2 (2028)</th>
+                                <th class="p-1.5">Año 3 (2029)</th>
+                                <th class="p-1.5">Año 4 (2030)</th>
+                                <th class="p-1.5">Año 5 (2031)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/80 text-slate-300">
+                            <tr>
+                                <td class="p-1.5 text-left font-sans text-slate-400">Inversión Inicial (I<sub>0</sub>) / Beneficio Bruto</td>
+                                <td class="p-1.5 text-rose-400">-$13,662.14</td>
+                                <td class="p-1.5 text-emerald">+$10,400.00</td>
+                                <td class="p-1.5 text-emerald">+$10,400.00</td>
+                                <td class="p-1.5 text-emerald">+$10,400.00</td>
+                                <td class="p-1.5 text-emerald">+$10,400.00</td>
+                                <td class="p-1.5 text-emerald">+$10,400.00</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1.5 text-left font-sans text-slate-400">Gastos Fijos Operativos (OPEX Anual)</td>
+                                <td class="p-1.5">$0.00</td>
+                                <td class="p-1.5 text-rose-400">-$2,400.00</td>
+                                <td class="p-1.5 text-rose-400">-$2,400.00</td>
+                                <td class="p-1.5 text-rose-400">-$2,400.00</td>
+                                <td class="p-1.5 text-rose-400">-$2,400.00</td>
+                                <td class="p-1.5 text-rose-400">-$2,400.00</td>
+                            </tr>
+                            <tr class="bg-slate-900/70 font-bold text-white">
+                                <td class="p-1.5 text-left font-sans text-emerald">Flujo Neto de Caja (FC<sub>t</sub>)</td>
+                                <td class="p-1.5 text-rose-400">-$13,662.14</td>
+                                <td class="p-1.5 text-emerald">+$8,000.00</td>
+                                <td class="p-1.5 text-emerald">+$8,000.00</td>
+                                <td class="p-1.5 text-emerald">+$8,000.00</td>
+                                <td class="p-1.5 text-emerald">+$8,000.00</td>
+                                <td class="p-1.5 text-emerald">+$8,000.00</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1.5 text-left font-sans text-slate-400">Flujo Descontado (TMAR 12%: FD<sub>t</sub>)</td>
+                                <td class="p-1.5 text-rose-400">-$13,662.14</td>
+                                <td class="p-1.5 text-blue">+$7,142.86</td>
+                                <td class="p-1.5 text-blue">+$6,377.55</td>
+                                <td class="p-1.5 text-blue">+$5,694.24</td>
+                                <td class="p-1.5 text-blue">+$5,084.14</td>
+                                <td class="p-1.5 text-blue">+$4,539.42</td>
+                            </tr>
+                            <tr>
+                                <td class="p-1.5 text-left font-sans text-slate-300">Flujo Acumulado Simple (Payback 1.71 a)</td>
+                                <td class="p-1.5 text-rose-400">-$13,662.14</td>
+                                <td class="p-1.5 text-rose-400">-$5,662.14</td>
+                                <td class="p-1.5 text-emerald font-bold">+$2,337.86</td>
+                                <td class="p-1.5 text-emerald">+$10,337.86</td>
+                                <td class="p-1.5 text-emerald">+$18,337.86</td>
+                                <td class="p-1.5 text-emerald font-bold">+$26,337.86</td>
+                            </tr>
+                            <tr class="bg-emerald-950/20">
+                                <td class="p-1.5 text-left font-sans text-emerald-300 font-semibold">Flujo Acum. Descontado (Payback 2.08 a)</td>
+                                <td class="p-1.5 text-rose-400">-$13,662.14</td>
+                                <td class="p-1.5 text-rose-400">-$6,519.28</td>
+                                <td class="p-1.5 text-rose-400">-$141.73</td>
+                                <td class="p-1.5 text-emerald font-bold">+$5,552.51</td>
+                                <td class="p-1.5 text-emerald">+$10,636.65</td>
+                                <td class="p-1.5 text-emerald font-bold">+$15,176.07</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-2 flex justify-between items-center text-[11px] text-slate-400">
+                    <span>Depreciación Fiscal (Ley 822): <b>-$2,572.43/año</b> · Utilidad Contable antes IR: <b>+$5,427.57/año</b></span>
+                    <div class="flex gap-2">
+                        <button onclick="toggleEvidenceModal(true); switchEvidenceTab('cierre');" class="py-1 px-2.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-400/50 text-white text-[10px] font-semibold flex items-center gap-1 cursor-pointer">
+                            <i data-lucide="calculator" class="w-3 h-3 text-emerald-300"></i> Ver Arqueo Diario (40 Facturas)
+                        </button>
+                        <button onclick="toggleEvidenceModal(true); switchEvidenceTab('postgres');" class="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[10px] font-semibold flex items-center gap-1 cursor-pointer">
+                            <i data-lucide="database" class="w-3 h-3 text-blue"></i> Ver Consultas PostgreSQL (pgAdmin 4)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 13: Indicadores Financieros Clave y Análisis de Sensibilidad -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="trending-up" class="w-7 h-7 text-emerald"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Indicadores de Rentabilidad y Sensibilidad</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=20" target="_blank" class="ref-link" title="Abrir Cálculo de VAN, TIR y Payback en Informe Financiero (Pág. 20)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §11 (Pág. 20)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=21" target="_blank" class="ref-link" title="Abrir Análisis de Sensibilidad (3 Escenarios) en Informe Financiero (Pág. 21)">
+                            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Sensibilidad §12 (Pág. 21)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <span class="text-xs font-mono text-emerald bg-emerald-900/30 px-2.5 py-1 rounded-lg">TMAR 12.00% · B/C = 2.11</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3">
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-emerald-500/20 text-center">
+                        <span class="text-[10px] text-slate-400 uppercase block font-semibold">VAN (TMAR 12%)</span>
+                        <p class="text-xl font-bold text-emerald" data-count="15176.26" data-dec="2" data-pre="$">$15,176.26</p>
+                        <span class="text-[10px] text-slate-400 font-mono">+C$ 558,486.37 NIO</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-blue-500/20 text-center">
+                        <span class="text-[10px] text-slate-400 uppercase block font-semibold">TIR (Retorno Interno)</span>
+                        <p class="text-xl font-bold text-blue" data-count="50.84" data-dec="2" data-suf="%">50.84%</p>
+                        <span class="text-[10px] text-slate-400">+38.84 pts sobre TMAR</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-blue-500/20 text-center">
+                        <span class="text-[10px] text-slate-400 uppercase block font-semibold">ROI Quinquenal</span>
+                        <p class="text-xl font-bold text-blue" data-count="192.78" data-dec="2" data-suf="%">192.78%</p>
+                        <span class="text-[10px] text-slate-400">$2.93 por cada $1 invertido</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-emerald-500/20 text-center">
+                        <span class="text-[10px] text-slate-400 uppercase block font-semibold">Payback Simple / Desc.</span>
+                        <p class="text-xl font-bold text-emerald" data-count="1.71" data-dec="2" data-suf=" a">1.71 a</p>
+                        <span class="text-[10px] text-slate-400">1a 8.5m (2.08 a desc.)</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Gráfica de flujo acumulado -->
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                        <div class="flex justify-between text-xs text-slate-300 mb-2">
+                            <b>Curva de Recuperación de Capital Acumulado ($)</b>
+                            <span class="text-emerald font-mono">B/C = 2.11</span>
+                        </div>
+                        <div class="relative h-24 border-b border-slate-700/50" id="cum"></div>
+                        <div class="flex text-center text-[10px] font-mono text-slate-300 mt-2" id="cuml"></div>
+                    </div>
+                    <!-- Análisis de Sensibilidad -->
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50 text-xs flex flex-col justify-between">
+                        <b class="text-white block mb-1">Análisis de Sensibilidad Multimodelo (3 Escenarios)</b>
+                        <div class="space-y-1.5 text-[11px]">
+                            <div class="p-1.5 bg-slate-800/80 rounded flex justify-between items-center border-l-2 border-amber-400">
+                                <span><b>Pesimista (30 v/día, FC +$5,000):</b></span>
+                                <span class="font-mono text-amber-300">VAN +$4,361.86 · TIR 24.23% · 2.73 a</span>
+                            </div>
+                            <div class="p-1.5 bg-emerald-950/40 rounded flex justify-between items-center border-l-2 border-emerald-400">
+                                <span><b>Base Auditado (40 v/día, FC +$8,000):</b></span>
+                                <span class="font-mono text-emerald font-bold">VAN +$15,176.26 · TIR 50.84% · 1.71 a</span>
+                            </div>
+                            <div class="p-1.5 bg-slate-800/80 rounded flex justify-between items-center border-l-2 border-blue-400">
+                                <span><b>Optimista (65–75 v/día, FC +$10,600):</b></span>
+                                <span class="font-mono text-blue">VAN +$24,548.74 · TIR 72.51% · 1.29 a</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Incluso ante una caída comercial del 28.8% (Escenario Pesimista), la TIR (24.23%) duplica la TMAR (12%).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 14: Marco Legal en Managua, Contrato de Software y Conclusión -->
+            <div class="slide glass-panel">
+                <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-700/50">
+                    <div class="flex items-center gap-3"><i data-lucide="scale" class="w-7 h-7 text-blue"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white tracking-tight">Marco Legal en Managua, Contrato y Conclusión</h2></div>
+                    <div class="flex items-center gap-2">
+                        <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=5" target="_blank" class="ref-link ref-legal" title="Abrir Cláusulas I a XII en Contrato de Licencia (Pág. 5-7)">
+                            <i data-lucide="scale" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Contrato Cl. I–XII (Pág. 5)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=22" target="_blank" class="ref-link" title="Abrir Dictamen y Marco Jurídico en Informe Financiero (Pág. 22)">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span>Informe Fin. §13 (Pág. 22)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                        <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=9" target="_blank" class="ref-link ref-legal" title="Abrir Acta Formal de Entrega en Contrato (Pág. 9)">
+                            <i data-lucide="file-check" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span>Acta Anexo I (Pág. 9)</span>
+                            <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <h3 class="text-emerald font-bold flex items-center gap-2"><i data-lucide="book-open" class="w-4 h-4"></i> Legislación Aplicada (Managua, Nicaragua)</h3>
+                        <p class="text-slate-300 text-[11px] leading-relaxed">
+                            • <b>Leyes No. 312 y 577 (Derechos de Autor):</b> Derechos morales inalienables e irrenunciables para los 3 autores (Ángel Antonio Alonso Suárez, Noel Isaac Alemán Carballo y Mendell Noé Parrales Molina). Derechos patrimoniales otorgados mediante <b>Licencia de Uso Perpetua, No Exclusiva e Intransferible</b> para el servidor local SRV1. Prohibida la reventa o explotación SaaS.<br>
+                            • <b>Ley No. 787 y Dec. 36-2012 (Datos Personales):</b> Base de datos aislada en <span class="font-mono">127.0.0.1</span>, RBAC, hashes Argon2/PBKDF2 y acuerdo NDA indefinido.<br>
+                            • <b>Ley No. 822 (LCT) y Dec. 10-91 (Plan de Arbitrios Managua):</b> Retención en la fuente del <b>10% IR</b> (DGI, Art. 87) y <b>1% IMI</b> (Alcaldía de Managua, Art. 11).
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
+                        <h3 class="text-blue font-bold flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> Pactos Contractuales y Conclusión General</h3>
+                        <div class="p-2 bg-slate-800 rounded space-y-1.5 text-[11px]">
+                            <p>• <b>Partes Comparecientes:</b> Desarrolladores UNI vs. <b>Moto Repuestos El Centenario, S.A.</b>, representada legalmente por <b>Carlos Alberto Mendoza Guido</b> <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=1" target="_blank" class="cite-pill" title="Ver comparecencia notarial en Contrato Pág. 1">Contrato pág. 1 ↗</a>.</p>
+                            <p>• <b>Cláusula V (Precio y Retenciones):</b> <b>$3,500.00 USD</b> (C$ 128,800 NIO). Retención DGI 10% IR ($350.00) y Alcaldía 1% IMI ($35.00) &rarr; <b>Neto: $3,115.00 USD</b>. Desembolso inicial $I_0 = $13,662.14 USD ($13,987.14 patrimonio TI) <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=6" target="_blank" class="cite-pill" title="Ver Cláusula V en Contrato Pág. 6">Cl. V pág. 6 ↗</a>.</p>
+                            <p>• <b>Cláusula VI y VII (Garantía, SLA y Mantenimiento):</b> 12 meses garantía de estabilidad, soporte correctivo ISO 14764 y evolución de módulos bajo COCOMO II ACT ($551.25/año) <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=6" target="_blank" class="cite-pill" title="Ver Cláusulas VI y VII en Contrato Pág. 6-7">Cl. VI-VII pág. 6-7 ↗</a>.</p>
+                            <p>• <b>Cláusula XI y Anexo I:</b> Resolución pacífica de controversias ante <b>DIRAC Managua</b> y Acta Formal de Entrega y Recepción <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=7" target="_blank" class="cite-pill" title="Ver Cláusula XI en Contrato Pág. 7">DIRAC pág. 7 ↗</a> <a href="docs/Contrato_de_Licencia_de_Software.pdf#page=9" target="_blank" class="cite-pill" title="Ver Acta Anexo I en Contrato Pág. 9">Acta pág. 9 ↗</a>.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 p-3 bg-gradient-to-r from-blue-950/50 to-emerald-950/50 rounded-xl border border-emerald-500/30 text-center">
+                    <b class="text-white text-sm block mb-0.5">Dictamen Final de Ingeniería de Software 1</b>
+                    <p class="text-slate-200 text-xs">
+                        El proyecto para <b>Moto Repuestos El Centenario, S.A.</b> es técnica, operativa, financiera y jurídicamente viable: elimina el cuello de botella en mostrador (de 22.8 min a 20.6 s), opera con licencias $0.00 FOSS, protege la continuidad con respaldo 3-2-1 y recupera la inversión inicial de $13,662.14 USD ($13,987.14 USD patrimonio total) en <b>1.71 años</b> (1 año y 8 meses) con una <b>TIR del 50.84%</b> y un <b>VAN de +$15,176.07 USD</b> (TMAR 12.00%).
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Controles Inferiores -->
+        <div class="controls">
+            <button id="prev-btn" class="nav-btn" disabled title="Diapositiva anterior (Flecha Izquierda)">
+                <i data-lucide="chevron-left"></i>
+            </button>
+            <div id="slide-indicator" class="px-6 py-2 rounded-full bg-slate-900/85 backdrop-blur-md border border-slate-700/50 text-slate-300 font-mono text-sm tracking-widest">
+                1 / 14
+            </div>
+            <button id="next-btn" class="nav-btn" title="Diapositiva siguiente (Flecha Derecha / Espacio)">
+                <i data-lucide="chevron-right"></i>
+            </button>
+            <!-- Botón de Acceso Rápido a Referencia del Slide Actual (Atajo de teclado: 'R') -->
+            <button id="slide-ref-btn" onclick="openCurrentSlideRef()" class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-blue-950/90 hover:bg-blue-900 text-blue-200 text-xs border border-blue-500/50 shadow-xl backdrop-blur-md transition-all cursor-pointer font-mono" title="Abrir página referenciada del documento en una nueva pestaña (Atajo: presionar R)">
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span id="slide-ref-text">Ref. Pág. 4</span>
+                <kbd class="text-[9px] bg-blue-900/70 px-1.5 py-0.5 rounded border border-blue-500/30 text-blue-200 font-bold">R</kbd>
+            </button>
+        </div>
+
+        <!-- Toast de Notificación de Referencias Rápidas -->
+        <div id="ref-toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 translate-y-3 px-4 py-2.5 rounded-xl bg-slate-900/95 border border-blue-500/50 text-white text-xs shadow-2xl flex items-center gap-2.5 backdrop-blur-md">
+            <i data-lucide="external-link" class="w-4 h-4 text-blue-400"></i>
+            <span id="ref-toast-text">Abriendo documento de referencia...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Inicializar iconos Lucide
+        try { lucide.createIcons(); } catch (e) {}
+
+        // Control del Modal de Evidencias Operativas
+        function toggleEvidenceModal(show) {
+            const m = document.getElementById('evidence-modal');
+            if (!m) return;
+            if (show === undefined) {
+                m.classList.toggle('hidden');
+            } else if (show) {
+                m.classList.remove('hidden');
+            } else {
+                m.classList.add('hidden');
+            }
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        function switchEvidenceTab(tabId) {
+            if (tabId === 'workbench') tabId = 'postgres';
+            document.querySelectorAll('.ev-tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.ev-tab-btn').forEach(el => {
+                el.classList.remove('bg-blue-600', 'text-white', 'border-blue-400');
+                el.classList.add('bg-slate-800', 'text-slate-400', 'border-transparent');
+            });
+            const target = document.getElementById('ev-tab-' + tabId);
+            const btn = document.getElementById('btn-ev-' + tabId);
+            if (target) target.classList.remove('hidden');
+            if (btn) {
+                btn.classList.add('bg-blue-600', 'text-white', 'border-blue-400');
+                btn.classList.remove('bg-slate-800', 'text-slate-400', 'border-transparent');
+            }
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        // Control del Modal de Documentos
+        function toggleRepoModal(show) {
+            const m = document.getElementById('repo-modal');
+            if (!m) return;
+            if (show === undefined) {
+                m.classList.toggle('hidden');
+            } else if (show) {
+                m.classList.remove('hidden');
+            } else {
+                m.classList.add('hidden');
+            }
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        // ----------------------------------------------------
+        // LÓGICA DE FONDOS 3D (THREE.JS)
+        // ----------------------------------------------------
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const group = new THREE.Group();
+        scene.add(group);
+
+        // Partículas (Estrellas de red informática)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 2000;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 20;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particleMaterial = new THREE.PointsMaterial({ size: 0.02, color: 0x38bdf8, transparent: true, opacity: 0.6 });
+        const particlesMesh = new THREE.Points(particlesGeometry, particleMaterial);
+        group.add(particlesMesh);
+
+        // Icosaedro y Torus
+        const icosahedronGeometry = new THREE.IcosahedronGeometry(1.5, 1);
+        const icosahedronMaterial = new THREE.MeshStandardMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.15 });
+        const icosahedron = new THREE.Mesh(icosahedronGeometry, icosahedronMaterial);
+        icosahedron.position.set(-4, 1, -5);
+        group.add(icosahedron);
+
+        const torusGeometry = new THREE.TorusKnotGeometry(1.5, 0.4, 100, 16);
+        const torusMaterial = new THREE.MeshStandardMaterial({ color: 0x10b981, wireframe: true, transparent: true, opacity: 0.15 });
+        const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+        torus.position.set(4, -1, -6);
+        group.add(torus);
+
+        // Iluminación
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 5);
+        scene.add(directionalLight);
+
+        camera.position.z = 3;
+
+        let mouseX = 0, mouseY = 0;
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) - 0.5;
+            mouseY = (event.clientY / window.innerHeight) - 0.5;
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            group.rotation.y = elapsedTime * 0.05;
+            icosahedron.rotation.x = -elapsedTime * 0.1;
+            icosahedron.rotation.y = elapsedTime * 0.2;
+            torus.rotation.x = elapsedTime * 0.2;
+            torus.rotation.z = elapsedTime * 0.1;
+
+            camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 1.5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ----------------------------------------------------
+        // NAVEGACIÓN Y CONTROL DE DIAPOSITIVAS (14 SLIDES)
+        // ----------------------------------------------------
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const indicator = document.getElementById('slide-indicator');
+        const progressBar = document.getElementById('progress-bar');
+        
+        let currentSlide = 0;
+        const totalSlides = slides.length; // 14 diapositivas
+
+        // Mapeo exhaustivo de Referencias Directas a Páginas de Documentos PDF (#page=N)
+        const slideReferences = [
+            { label: "Inf. Fin. (Pág. 4)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 4, section: "§1 Introducción y Perfil Comercial" },
+            { label: "Inf. Fin. (Pág. 6)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 6, section: "§2 Teoría de Colas M/M/c y Red" },
+            { label: "COCOMO II (Pág. 8)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 8, section: "§3 COCOMO II Post-Architecture Mixto" },
+            { label: "Hardware (Pág. 10)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 10, section: "§4 Hardware Antiguo y Consumo" },
+            { label: "DGA Arancel (Pág. 19)", name: "Proforma e Infraestructura", file: "docs/Proforma_e_Informe_de_Infraestructura.pdf", page: 19, section: "§11 Liquidación Aduanera DGA" },
+            { label: "Dualidad (Pág. 13)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 13, section: "§6 Presupuesto Total y Dualidad" },
+            { label: "SRV1 BD (Pág. 14)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 14, section: "§7 Software SRV1 y Capacidad 5 Años" },
+            { label: "Respaldo 3-2-1 (Pág. 16)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 16, section: "§8 Estrategia 3-2-1, RPO/RTO y Wasabi" },
+            { label: "Consumibles (Pág. 17)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 17, section: "§9 TCO Consumibles e Impresión" },
+            { label: "OPEX $200 (Pág. 18)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 18, section: "§10 Auditoría OPEX y Tarifa Luz T-B" },
+            { label: "Mantenimiento (Pág. 19)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 19, section: "§10.2 Mantenimiento ISO 14764 y ACT" },
+            { label: "Flujo 5 Años (Pág. 20)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 20, section: "§11 Tabla Maestra de Flujo de Capital" },
+            { label: "VAN / TIR (Pág. 20)", name: "Informe Financiero", file: "docs/Informe_Financiero_y_de_Viabilidad.pdf", page: 20, section: "§11-12 Indicadores de Rentabilidad y Sensibilidad" },
+            { label: "Contrato Legal (Pág. 5)", name: "Contrato de Licencia", file: "docs/Contrato_de_Licencia_de_Software.pdf", page: 5, section: "Cláusulas I-XII y Leyes de Managua" }
+        ];
+
+        function showRefToast(msg) {
+            const toast = document.getElementById('ref-toast');
+            const toastText = document.getElementById('ref-toast-text');
+            if (!toast || !toastText) return;
+            toastText.textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-3');
+            }, 2800);
+        }
+
+        function openCurrentSlideRef() {
+            const ref = slideReferences[currentSlide];
+            if (!ref) return;
+            const targetUrl = `${ref.file}#page=${ref.page}`;
+            showRefToast(`Abriendo ${ref.name} (Página ${ref.page}) en nueva pestaña...`);
+            window.open(targetUrl, '_blank');
+        }
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+            indicator.textContent = `${currentSlide + 1} / ${totalSlides}`;
+            progressBar.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            
+            // Actualizar etiqueta del botón de referencia rápida
+            const ref = slideReferences[currentSlide];
+            const refLabel = document.getElementById('slide-ref-text');
+            if (ref && refLabel) {
+                refLabel.textContent = ref.label;
+            }
+
+            animateSlide(slides[currentSlide]);
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { toggleRepoModal(false); toggleEvidenceModal(false); return; }
+
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentSlide < totalSlides - 1) {
+                    currentSlide++;
+                    updateSlides();
+                }
+            }
+            if (e.key === 'ArrowLeft') {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateSlides();
+                }
+            }
+            if (e.key === 'r' || e.key === 'R' || e.key === 'd' || e.key === 'D') {
+                openCurrentSlideRef();
+            }
+        });
+
+        // ----------------------------------------------------
+        // FORMATEO, PILAS ANIMADAS Y DATOS ESTADÍSTICOS
+        // ----------------------------------------------------
+        const fmt = (n, d = 2) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const $id = i => document.getElementById(i);
+        
+        const stack = (id, parts, unit = '$') => { 
+            const el = $id(id);
+            if (!el) return;
+            const t = parts.reduce((a, p) => a + p[1], 0);
+            el.innerHTML = parts.map(p => {
+                const label = unit === '$' ? `$${fmt(p[1])}` : `${fmt(p[1], 0)} ${unit}`;
+                return `<div class="seg ${p[2]}" data-w="${(p[1] / t * 100).toFixed(2)}" title="${p[0]}: ${label}"></div>`;
+            }).join(''); 
+        };
+        
+        const legend = (id, parts) => { 
+            const el = $id(id);
+            if (!el) return;
+            el.innerHTML = parts.map(p => `<div class="flex justify-between py-0.5"><span class="text-slate-300"><i class="inline-block w-2.5 h-2.5 rounded-sm mr-2 ${p[2]}"></i>${p[0]}</span><span class="font-mono text-white">$${fmt(p[1])}</span></div>`).join(''); 
+        };
+
+        // Slide 3: KLOC
+        stack('loc', [['Python', 8046, 'c1'], ['HTML', 591, 'c3'], ['Markdown', 53, 'c5'], ['PowerShell', 50, 'c2'], ['CSS', 15, 'c4'], ['Texto', 2, 'c6']], 'LOC');
+
+        // Slide 4: Items Proforma
+        const items = [
+            ['SRV1', 'Dell PowerEdge T150 (8c, 32GB ECC, 2x1TB SSD)', 1, 1600.00],
+            ['NAS1', 'Synology DS224+ (NAS 2 Bahías)', 1, 361.19],
+            ['NAS-HDD', 'Discos Seagate IronWolf 2TB CMR', 2, 349.98],
+            ['BKP-USB1', 'Disco Externo 2TB USB 3.0 Cifrado', 1, 80.00],
+            ['PC01–06', 'PC Micro Core i5, 8GB RAM, 256GB SSD', 6, 2100.00],
+            ['LAP01–02', 'Laptops Corporativas Gerencia (GER01/PROP01)', 2, 900.00],
+            ['MON01–06', 'Monitores LED 24" Full HD', 6, 600.00],
+            ['PER01–06', 'Teclados y Ratones USB', 6, 120.00],
+            ['LCT01–05', 'Lectores Ópticos de Código de Barras', 5, 200.00],
+            ['CAJ01–04', 'Cajones de Dinero Metálicos RJ11', 4, 240.00],
+            ['ADP01–02', 'Adaptadores Anker USB-C a Gigabit', 2, 51.98],
+            ['R1', 'Router / Firewall TP-Link ER605', 1, 60.00],
+            ['SW1', 'Switch TP-Link TL-SG2428P PoE+ 250W', 1, 220.00],
+            ['AP1', 'Punto de Acceso Omada EAP610 PoE', 1, 100.00],
+            ['UPS1', 'UPS CyberPower 1500VA Onda Pura', 1, 239.95],
+            ['RACK1', 'Gabinete de Pared 12U Ventilado', 1, 150.00],
+            ['CBL', 'Cableado Cat 6, Patch Panel y RJ45', 1, 150.00],
+            ['PDU1', 'Regleta PDU 8 Tomas de Rack 1U', 1, 40.00],
+            ['SUM-PRN', 'Tóner Canon 057 + Papel (5,000 h)', 1, 206.99]
+        ];
+        if ($id('items')) {
+            $id('items').innerHTML = items.map(r => `
+                <div class="py-1 border-b border-slate-800">
+                    <div class="flex justify-between gap-2">
+                        <span><b class="font-mono text-blue">${r[0]}</b> ${r[1]} <span class="text-slate-500">×${r[2]}</span></span>
+                        <span class="font-mono text-white">$${fmt(r[3])}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Slide 5: Importación DGA
+        const imp = [
+            ['Hardware Ex-Works', 7770.09, 'c1'],
+            ['Flete Marítimo (250–300 lb)', 800.00, 'c3'],
+            ['Seguro de Tránsito 1.5 %', 116.55, 'c5'],
+            ['DAI Estimado', 150.00, 'c6'],
+            ['IVA Aduanero 15 %', 1325.50, 'c4']
+        ];
+        stack('imp', imp); legend('impl', imp);
+
+        // Slide 6: CAPEX e I0
+        const cap = [
+            ['Software (COCOMO II Post-Architecture: 9.0 PM × $300)', 2700.00, 'c2'],
+            ['Hardware Nuevo Ex-Works (19 ítems Amazon US)', 7770.09, 'c1'],
+            ['Costos de Importación DGA (Flete, Seguro, DAI, IVA)', 2392.05, 'c4'],
+            ['Instalación, Cableado Cat 6, VLANs y Puesta en Marcha', 800.00, 'c3']
+        ];
+        stack('cap', cap); legend('capl', cap);
+
+        // Slide 7: Almacenamiento SRV1 a 5 Años
+        const sto = [
+            ['Base de Datos (Tablas 1.8 GB + Índices 2.2 GB)', 4, 'c1'],
+            ['Archivos WAL y Motor', 4, 'c5'],
+            ['Facturas en PDF', 8, 'c3'],
+            ['Debian 12 + Runtime + Logs', 15, 'c6'],
+            ['Respaldos Locales Temporales', 15, 'c4'],
+            ['Margen de Contingencia', 12, 'c2']
+        ];
+        stack('sto', sto.concat([['Libre Remanente en RAID 1', 942, 'bg-slate-700']]), 'GB');
+        stack('stoz', sto, 'GB');
+
+        // Slide 10: OPEX
+        stack('opx', [
+            ['Energía Eléctrica Tarifa T-B ($40/mes = 20%)', 40, 'c3'],
+            ['Internet Fibra Corporativo ISP ($50/mes = 25%)', 50, 'c1'],
+            ['Consumibles Tóner 057H y Papel ($45/mes = 22.5%)', 45, 'c5'],
+            ['Mantenimiento ISO 14764 y Soporte SLA ($65/mes = 32.5%)', 65, 'c2']
+        ]);
+
+        // Slide 13: Flujo Acumulado Gráfico
+        const cumEl = $id('cum');
+        const cumlEl = $id('cuml');
+        if (cumEl && cumlEl) {
+            const Z = (13662.14 / 40000) * 100;
+            cumEl.innerHTML = `<div class="absolute left-0 right-0 border-t border-slate-500/60" style="bottom:${Z}%"></div>` +
+                [0, 1, 2, 3, 4, 5].map(i => {
+                    const v = -13662.14 + (8000 * i);
+                    const h = Math.abs(v) / 400;
+                    return `<div class="absolute" style="left:${i * 100 / 6}%;width:${100 / 6}%;top:0;bottom:0">
+                        <div class="vbar ${v < 0 ? 'c4' : 'c2'}" style="${v < 0 ? 'top:' + (100 - Z) : 'bottom:' + Z}%" data-h="${h.toFixed(1)}"></div>
+                    </div>`;
+                }).join('');
+
+            cumlEl.innerHTML = [0, 1, 2, 3, 4, 5].map(i => {
+                const v = -13662.14 + (8000 * i);
+                return `<div class="flex-1">Año ${i}<br><span class="${v < 0 ? 'text-rose-400' : 'text-emerald'}">${v < 0 ? '-' : ''}$${fmt(Math.abs(v), 0)}</span></div>`;
+            }).join('');
+        }
+
+        // Animación de números y contadores
+        function count(e) {
+            const t = +e.dataset.count, d = +(e.dataset.dec || 0), p = e.dataset.pre || '', u = e.dataset.suf || '';
+            if (matchMedia('(prefers-reduced-motion: reduce)').matches) { e.textContent = p + fmt(t, d) + u; return; }
+            const t0 = performance.now();
+            (function f(n) { 
+                const k = Math.min(1, (n - t0) / 1000);
+                const v = t * (1 - Math.pow(1 - k, 3)); 
+                e.textContent = p + fmt(v, d) + u; 
+                if (k < 1) requestAnimationFrame(f); 
+            })(t0);
+        }
+
+        function animateSlide(s) {
+            document.querySelectorAll('[data-w]').forEach(e => e.style.width = 0);
+            document.querySelectorAll('[data-h]').forEach(e => e.style.height = 0);
+            void s.offsetWidth;
+            s.querySelectorAll('[data-w]').forEach(e => e.style.width = e.dataset.w + '%');
+            s.querySelectorAll('[data-h]').forEach(e => e.style.height = e.dataset.h + '%');
+            s.querySelectorAll('[data-count]').forEach(count);
+        }
+
+        // Inicializar presentación
+        updateSlides();
+    </script>
+
+    <!-- MODAL DE REPOSITORIO DE DOCUMENTOS COMPLETOS -->
+    <div id="repo-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden transition-opacity">
+        <div class="relative w-full max-w-4xl max-h-[90vh] bg-slate-900/95 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <!-- Header del modal -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700/60 bg-slate-800/40">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="folder-open" class="w-6 h-6 text-indigo-400"></i>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Documentación y Entregables Oficiales</h3>
+                        <p class="text-xs text-slate-400">Caso de estudio: Distribuidora Comercial Moto Repuestos El Centenario, S.A. (Managua)</p>
+                    </div>
+                </div>
+                <button onclick="toggleRepoModal(false)" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Contenido scrollable -->
+            <div class="p-6 overflow-y-auto space-y-6 text-xs text-slate-300">
+                
+                <!-- Sección 1: Entrega Final -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3 pb-1 border-b border-indigo-500/30">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                        <h4 class="text-sm font-bold text-white uppercase tracking-wider">Fase Actual: Viabilidad, Costos, Infraestructura y Contrato</h4>
+                    </div>
+
+                    <!-- Banner Destacado: Modelo Excel para No Técnicos -->
+                    <div class="p-3.5 mb-3 rounded-xl bg-gradient-to-r from-emerald-950/80 to-blue-950/80 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                                <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-white flex items-center gap-1.5">
+                                    <span>Modelo Financiero Dinámico en Excel (.XLSX)</span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-mono">9 Hojas Canónicas UNI</span>
+                                </h5>
+                                <p class="text-[11px] text-slate-300 mt-0.5">Diseñado para no técnicos: KPIs, CAPEX, OPEX ($200/mes), beneficios ($10.4k/año), flujo 5 años y sensibilidad.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a href="visor-excel.html" target="_blank" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md hover:shadow-emerald-500/30 transition-all cursor-pointer" title="Abrir Modelo Financiero en el Navegador como los PDF">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                                <span>Abrir en Navegador</span>
+                                <i data-lucide="external-link" class="w-3 h-3 opacity-70"></i>
+                            </a>
+                            <a href="docs/Modelo_Financiero_MotoRepuestos_Centenario.xlsx" download class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 border border-slate-600 transition-all cursor-pointer" title="Descargar archivo Excel original (.xlsx)">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span class="hidden sm:inline">Descargar .xlsx</span>
+                            </a>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf" target="_blank" class="p-3.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-blue-500/50 transition-all flex flex-col justify-between group">
+                            <div>
+                                <div class="flex items-center gap-2 text-blue font-semibold mb-1 group-hover:text-blue-300">
+                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                    <span>Informe Financiero</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 leading-relaxed">COCOMO II Post-Architecture (Enfoque Mixto), hardware antiguo, gastos fijos OPEX ($200/mes), mantenimiento ISO 14764, flujo a 5 años y VAN/TIR.</p>
+                                <div class="mt-2.5 pt-2 border-t border-slate-700/60 flex flex-wrap gap-1 text-[9px] font-mono">
+                                    <span class="text-slate-400 block w-full text-[10px] mb-0.5">Saltar directamente a:</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=4', '_blank')">§1 Perfil p.4</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=6', '_blank')">§2 Colas p.6</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=8', '_blank')">§3 COCOMO p.8</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=10', '_blank')">§4 Hardware p.10</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=13', '_blank')">§6 Dualidad p.13</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=16', '_blank')">§8 Respaldo p.16</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=18', '_blank')">§10 OPEX p.18</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-500/30 text-blue-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Informe_Financiero_y_de_Viabilidad.pdf#page=20', '_blank')">§11 Flujo p.20</span>
+                                </div>
+                            </div>
+                            <span class="mt-3 text-[10px] text-blue/80 font-mono font-bold flex items-center gap-1">Abrir Documento Completo (25 Págs) <i data-lucide="external-link" class="w-3 h-3"></i></span>
+                        </a>
+
+                        <a href="docs/Proforma_e_Informe_de_Infraestructura.pdf" target="_blank" class="p-3.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 transition-all flex flex-col justify-between group">
+                            <div>
+                                <div class="flex items-center gap-2 text-emerald font-semibold mb-1 group-hover:text-emerald-300">
+                                    <i data-lucide="server" class="w-4 h-4"></i>
+                                    <span>Proforma e Infraestructura</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 leading-relaxed">Servidor Dell T150, conmutador PoE, NAS Synology, UPS, régimen aduanero DGA y cálculo CIF/DAI/IVA.</p>
+                                <div class="mt-2.5 pt-2 border-t border-slate-700/60 flex flex-wrap gap-1 text-[9px] font-mono">
+                                    <span class="text-slate-400 block w-full text-[10px] mb-0.5">Saltar directamente a:</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=5', '_blank')">§2 445W p.5</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=6', '_blank')">§3 Dell T150 p.6</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=10', '_blank')">§5 NAS p.10</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=12', '_blank')">§6 VLANs p.12</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=14', '_blank')">§8 UPS p.14</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=17', '_blank')">§10 Amazon p.17</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Proforma_e_Informe_de_Infraestructura.pdf#page=19', '_blank')">§11 DGA p.19</span>
+                                </div>
+                            </div>
+                            <span class="mt-3 text-[10px] text-emerald/80 font-mono font-bold flex items-center gap-1">Abrir Documento Completo (22 Págs) <i data-lucide="external-link" class="w-3 h-3"></i></span>
+                        </a>
+
+            <a href="docs/Contrato_de_Licencia_de_Software.pdf" target="_blank" class="p-3.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 transition-all flex flex-col justify-between group">
+                            <div>
+                                <div class="flex items-center gap-2 text-amber-400 font-semibold mb-1 group-hover:text-amber-300">
+                                    <i data-lucide="scale" class="w-4 h-4"></i>
+                                    <span>Contrato de Licencia</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 leading-relaxed">Contrato mercantil formal en Managua: Leyes 312, 577, 787, 822 LCT, IMI Managua, 12 cláusulas, SLA y Acta.</p>
+                                <div class="mt-2.5 pt-2 border-t border-slate-700/60 flex flex-wrap gap-1 text-[9px] font-mono">
+                                    <span class="text-slate-400 block w-full text-[10px] mb-0.5">Saltar directamente a:</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-500/30 text-amber-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Contrato_de_Licencia_de_Software.pdf#page=1', '_blank')">Comparecientes p.1</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-500/30 text-amber-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Contrato_de_Licencia_de_Software.pdf#page=3', '_blank')">Dictamen Leyes p.3</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-500/30 text-amber-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Contrato_de_Licencia_de_Software.pdf#page=6', '_blank')">Cl. V $3,500 p.6</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-500/30 text-amber-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Contrato_de_Licencia_de_Software.pdf#page=6', '_blank')">Cl. VI Mant. p.6</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-500/30 text-amber-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Contrato_de_Licencia_de_Software.pdf#page=7', '_blank')">Cl. VII SLA p.7</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-amber-950/70 border border-amber-500/30 text-amber-300 hover:text-white" onclick="event.preventDefault(); window.open('docs/Contrato_de_Licencia_de_Software.pdf#page=9', '_blank')">Acta Anexo I p.9</span>
+                                </div>
+                            </div>
+                            <span class="mt-3 text-[10px] text-amber-400/80 font-mono font-bold flex items-center gap-1">Abrir Documento Completo (9 Págs) <i data-lucide="external-link" class="w-3 h-3"></i></span>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer del modal -->
+            <div class="px-6 py-3 border-t border-slate-700/60 bg-slate-800/50 flex justify-between items-center text-[11px] text-slate-400">
+                <span>Presiona <kbd class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 font-mono">ESC</kbd> para cerrar</span>
+                <button onclick="toggleRepoModal(false)" class="px-4 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EVIDENCIAS OPERATIVAS Y PRUEBAS REALES (5 PESTAÑAS) -->
+    <div id="evidence-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden transition-opacity">
+        <div class="relative w-full max-w-5xl max-h-[92vh] bg-slate-900/98 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <!-- Header del modal -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700/60 bg-slate-800/60">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <i data-lucide="receipt" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            Centro de Evidencias Operativas, Gastos Fijos y Pruebas SQL
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/40">Respaldo Documental</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Distribuidora Comercial Moto Repuestos El Centenario, S.A. · Managua, Nicaragua</p>
+                    </div>
+                </div>
+                <button onclick="toggleEvidenceModal(false)" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Barra de Pestañas (5 Tabs) -->
+            <div class="flex flex-wrap border-b border-slate-700/60 bg-slate-950/60 px-6 gap-2 pt-2 text-xs">
+                <button id="btn-ev-factura" onclick="switchEvidenceTab('factura')" class="ev-tab-btn px-3.5 py-2 rounded-t-lg font-semibold flex items-center gap-1.5 border-b-2 bg-blue-600 text-white border-blue-400 transition-all cursor-pointer">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 1. Factura Comercial POS
+                </button>
+                <button id="btn-ev-cierre" onclick="switchEvidenceTab('cierre')" class="ev-tab-btn px-3.5 py-2 rounded-t-lg font-semibold flex items-center gap-1.5 border-b-2 bg-slate-800 text-slate-400 border-transparent hover:text-slate-200 transition-all cursor-pointer">
+                    <i data-lucide="calculator" class="w-3.5 h-3.5"></i> 2. Arqueo Diario (40 Ventas)
+                </button>
+                <button id="btn-ev-kardex" onclick="switchEvidenceTab('kardex')" class="ev-tab-btn px-3.5 py-2 rounded-t-lg font-semibold flex items-center gap-1.5 border-b-2 bg-slate-800 text-slate-400 border-transparent hover:text-slate-200 transition-all cursor-pointer">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i> 3. Kardex Ponderado
+                </button>
+                <button id="btn-ev-gastos" onclick="switchEvidenceTab('gastos')" class="ev-tab-btn px-3.5 py-2 rounded-t-lg font-semibold flex items-center gap-1.5 border-b-2 bg-slate-800 text-slate-400 border-transparent hover:text-slate-200 transition-all cursor-pointer">
+                    <i data-lucide="zap" class="w-3.5 h-3.5"></i> 4. Recibos Gastos Fijos y CLOC
+                </button>
+                <button id="btn-ev-postgres" onclick="switchEvidenceTab('postgres')" class="ev-tab-btn px-3.5 py-2 rounded-t-lg font-semibold flex items-center gap-1.5 border-b-2 bg-slate-800 text-slate-400 border-transparent hover:text-slate-200 transition-all cursor-pointer">
+                    <i data-lucide="database" class="w-3.5 h-3.5"></i> 5. Consultas PostgreSQL (pgAdmin 4)
+                </button>
+            </div>
+
+            <!-- Contenido scrollable de las Pestañas -->
+            <div class="p-6 overflow-y-auto space-y-6 text-xs text-slate-300">
+
+                <!-- TAB 1: Factura Comercial Emitida -->
+                <div id="ev-tab-factura" class="ev-tab-content space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Comprobante Fiscal Emitido en Mostrador (Terminal POS01)</h4>
+                            <p class="text-[11px] text-slate-400">Generado mediante procedimiento transaccional de ventas e impreso en Canon imageCLASS MF445dw (PRN1).</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=4" target="_blank" class="ref-link" title="Ver Modelo de Facturación y Ventas en Informe Financiero (Pág. 4)">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                                <span>Ver en Informe Financiero (Pág. 4)</span>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                            <span class="font-mono text-emerald bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-lg">Factura Nº 001-020-0001040</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Factura Renderizada estilo Ticket Térmico Corporativo -->
+                        <div class="md:col-span-2 bg-white text-slate-900 p-6 rounded-xl shadow-lg font-mono text-[11px] space-y-3 border border-slate-300">
+                            <div class="text-center pb-3 border-b-2 border-dashed border-slate-400 space-y-1">
+                                <b class="text-sm block tracking-wider font-bold">MOTO REPUESTOS EL CENTENARIO, S.A.</b>
+                                <p class="text-[10px] text-slate-700">RUC: J0310000123456 · Régimen General DGI Managua</p>
+                                <p class="text-[10px] text-slate-700">Pista Suburbana – El Zumen, Semáforos 2c. al Sur, Managua</p>
+                                <p class="text-[10px] text-slate-700">Tel: +(505) 2266-9870 · Terminal: POS01 (VLAN 20: 10.20.20.11)</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 text-[10px] py-1 border-b border-dashed border-slate-400">
+                                <div>
+                                    <p><b>Fecha:</b> 28/11/2026 11:42:15 AM</p>
+                                    <p><b>Factura:</b> #001-020-0001040</p>
+                                    <p><b>Cajero:</b> Ángel Alonso (Caja 1)</p>
+                                </div>
+                                <div class="text-right">
+                                    <p><b>Cliente:</b> Taller Mecánico El Veloz</p>
+                                    <p><b>Cédula/RUC:</b> 001-120585-0021K</p>
+                                    <p><b>Tipo Venta:</b> Contado (Efectivo Córdobas)</p>
+                                </div>
+                            </div>
+
+                            <table class="w-full text-left text-[10px] border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-400 text-slate-700">
+                                        <th class="py-1">Cant.</th>
+                                        <th class="py-1">Descripción</th>
+                                        <th class="py-1 text-right">P. Unit</th>
+                                        <th class="py-1 text-right">Total (NIO)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    <tr>
+                                        <td class="py-1">2</td>
+                                        <td class="py-1">Bujía NGK Resistor CR7HSA (Génesis/Pulsar)</td>
+                                        <td class="py-1 text-right">C$ 95.00</td>
+                                        <td class="py-1 text-right">C$ 190.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-1">1</td>
+                                        <td class="py-1">Kit Cadena y Corona 428H-118L Génesis HJ125</td>
+                                        <td class="py-1 text-right">C$ 480.00</td>
+                                        <td class="py-1 text-right">C$ 480.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-1">2</td>
+                                        <td class="py-1">Aceite 4T 20W-50 Castrol Actevo Mineral (1L)</td>
+                                        <td class="py-1 text-right">C$ 240.00</td>
+                                        <td class="py-1 text-right">C$ 480.00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="border-t-2 border-dashed border-slate-400 pt-2 space-y-1 text-right">
+                                <div class="flex justify-between"><span>Subtotal Gravable:</span><b>C$ 1,000.00 NIO</b></div>
+                                <div class="flex justify-between"><span>IVA (15% Ley 822 LCT):</span><b>C$ 150.00 NIO</b></div>
+                                <div class="flex justify-between text-xs font-bold pt-1 border-t border-slate-300">
+                                    <span>TOTAL FACTURA:</span>
+                                    <span>C$ 1,150.00 NIO ($31.25 USD)</span>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-600">
+                                    <span>Paga con: C$ 1,200.00 NIO</span>
+                                    <span>Cambio: C$ 50.00 NIO</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center pt-2 border-t border-dashed border-slate-400 text-[9px] text-slate-600 space-y-0.5">
+                                <p>¡Garantía de 30 días en piezas mecánicas presentando este comprobante!</p>
+                                <p>Transacción registrada en PostgreSQL 18.4 (SRV1 Dell PowerEdge T150)</p>
+                                <p class="font-mono text-[8px] text-slate-500">Hash SHA-256: e8b94f1023a887b92c4581f148902d334510ad678e91cb33</p>
+                            </div>
+                        </div>
+
+                        <!-- Panel de Explicación Técnica y Vinculación -->
+                        <div class="space-y-3 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 flex flex-col justify-between">
+                            <div>
+                                <h5 class="text-xs font-bold text-blue flex items-center gap-1.5 mb-2">
+                                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald"></i> Trazabilidad y Reglas ACID
+                                </h5>
+                                <ul class="space-y-2 text-[11px] text-slate-300 leading-relaxed">
+                                    <li>• <b>Numeración Correlativa:</b> Secuencia única controlada en el servidor SRV1 sin saltos ni borrado físico.</li>
+                                    <li>• <b>Bloqueo Pesimista (<span class="font-mono">SELECT FOR UPDATE</span>):</b> Evita que dos cajas vendan el último repuesto simultáneamente.</li>
+                                    <li>• <b>Impresión Redirigida VLAN 50:</b> Enviada a <span class="font-mono">PRN1 (10.20.50.10)</span> consumiendo 1 hoja de papel bond ($0.008) y tóner ($0.0039).</li>
+                                </ul>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-lg border border-slate-700 text-[10px] font-mono space-y-1">
+                                <span class="text-slate-400 block">Referencia Documental:</span>
+                                <b class="text-emerald">02_REQ_StRS_SyRS_SRS · 05_Pruebas_BD</b>
+                                <span class="text-slate-400 block mt-1">Ticket Promedio Ponderado:</span>
+                                <span>Global: <b class="text-white">C$ 240.38 NIO ($6.53 USD)</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Arqueo Diario de Caja -->
+                <div id="ev-tab-cierre" class="ev-tab-content hidden space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Reporte de Cierre y Arqueo Diario de Caja (Jornada 40 Facturas)</h4>
+                            <p class="text-[11px] text-slate-400">Conciliación de cierre diario a las 5:30 PM en las 4 cajas activas de mostrador.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=5" target="_blank" class="ref-link" title="Ver Flujo Operativo y Arqueo en Informe Financiero (Pág. 5)">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                                <span>Ver en Informe Financiero (Pág. 5)</span>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                            <span class="font-mono text-emerald bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-lg">Total: C$ 9,615.20 NIO</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-700 font-mono text-[11px] space-y-2.5">
+                            <b class="text-xs text-white block border-b border-slate-800 pb-1 flex justify-between">
+                                <span>ARQUEO CONSOLIDADO DIARIO</span>
+                                <span class="text-slate-400 font-normal">28/Nov/2026 - 17:30</span>
+                            </b>
+                            <div class="flex justify-between text-slate-300"><span>Facturas Emitidas:</span><b class="text-white">40 transacciones</b></div>
+                            <div class="flex justify-between text-slate-300"><span>Facturas Anuladas:</span><b class="text-white">0 (0.00%)</b></div>
+                            <div class="flex justify-between text-slate-300"><span>Ticket Promedio del Día:</span><b class="text-white">C$ 240.38 NIO ($6.53 USD)</b></div>
+                            <div class="border-t border-slate-800 pt-2 space-y-1">
+                                <div class="flex justify-between text-emerald"><span>• Cobro Efectivo Córdobas (65%):</span><b>C$ 6,249.88 NIO</b></div>
+                                <div class="flex justify-between text-blue"><span>• Cobro Efectivo Dólares (15%):</span><b>$39.19 USD (C$ 1,442.28)</b></div>
+                                <div class="flex justify-between text-purple-400"><span>• Tarjeta / Transferencia POS (20%):</span><b>C$ 1,923.04 NIO</b></div>
+                            </div>
+                            <div class="border-t-2 border-slate-700 pt-2 flex justify-between text-xs font-bold text-emerald">
+                                <span>TOTAL COBRADO EN VENTAS:</span>
+                                <span>C$ 9,615.20 NIO</span>
+                            </div>
+                            <div class="text-[10px] text-slate-500 pt-1">
+                                Base en caja apertura: C$ 1,000.00 NIO · Efectivo total a depositar: C$ 8,692.16 NIO
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-700 font-mono text-[11px] space-y-2.5">
+                            <b class="text-xs text-white block border-b border-slate-800 pb-1">DISTRIBUCIÓN POR CAJA (VLAN 20)</b>
+                            <div class="space-y-2 text-[11px]">
+                                <div class="p-2 rounded bg-slate-900 flex justify-between">
+                                    <span><b>POS01 (10.20.20.11):</b> 12 facturas (30%)</span>
+                                    <span class="text-emerald">C$ 2,884.56 NIO</span>
+                                </div>
+                                <div class="p-2 rounded bg-slate-900 flex justify-between">
+                                    <span><b>POS02 (10.20.20.12):</b> 11 facturas (27.5%)</span>
+                                    <span class="text-emerald">C$ 2,644.18 NIO</span>
+                                </div>
+                                <div class="p-2 rounded bg-slate-900 flex justify-between">
+                                    <span><b>POS03 (10.20.20.13):</b> 9 facturas (22.5%)</span>
+                                    <span class="text-emerald">C$ 2,163.42 NIO</span>
+                                </div>
+                                <div class="p-2 rounded bg-slate-900 flex justify-between">
+                                    <span><b>POS04 (10.20.20.14):</b> 8 facturas (20%)</span>
+                                    <span class="text-emerald">C$ 1,923.04 NIO</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 p-2 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-[10px]">
+                                <b>Verificación Mensual:</b> 26 días × C$ 9,615.20 = <b>C$ 250,000.00 NIO/mes ($6,793.48 USD)</b>. Cuadre matemático exacto con el Informe Financiero (§1.2).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Kardex Físico Valorado -->
+                <div id="ev-tab-kardex" class="ev-tab-content hidden space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Kardex Físico Valorado por Método del Promedio Ponderado</h4>
+                            <p class="text-[11px] text-slate-400">Trazabilidad de entradas por compra a proveedor, salidas por mostrador y costo promedio ponderado.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=6" target="_blank" class="ref-link" title="Ver Modelo de Colas M/M/c y Gestión de Inventarios en Informe Financiero (Pág. 6)">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                                <span>Ver en Informe Financiero (Pág. 6)</span>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                            <span class="font-mono text-blue bg-blue-950/60 border border-blue-500/30 px-3 py-1 rounded-lg">Item: Kit Cadena y Corona HJ125</span>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-[11px] font-mono border-collapse bg-slate-950 rounded-xl overflow-hidden border border-slate-700">
+                            <thead>
+                                <tr class="bg-slate-800 text-slate-200 border-b border-slate-700">
+                                    <th class="p-2.5">Fecha</th>
+                                    <th class="p-2.5">Documento</th>
+                                    <th class="p-2.5 text-center">Tipo</th>
+                                    <th class="p-2.5 text-right">Cant. Entr.</th>
+                                    <th class="p-2.5 text-right">Cant. Sal.</th>
+                                    <th class="p-2.5 text-right">Saldo Físico</th>
+                                    <th class="p-2.5 text-right">Costo Unit.</th>
+                                    <th class="p-2.5 text-right">Saldo Valor (NIO)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 text-slate-300">
+                                <tr>
+                                    <td class="p-2">01/Nov/2026</td>
+                                    <td class="p-2">Inv. Inicial</td>
+                                    <td class="p-2 text-center text-slate-400">APERTURA</td>
+                                    <td class="p-2 text-right">--</td>
+                                    <td class="p-2 text-right">--</td>
+                                    <td class="p-2 text-right font-bold text-white">15 unid.</td>
+                                    <td class="p-2 text-right">C$ 320.00</td>
+                                    <td class="p-2 text-right font-bold text-emerald">C$ 4,800.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2">05/Nov/2026</td>
+                                    <td class="p-2">Fact. Compra #4582</td>
+                                    <td class="p-2 text-center text-emerald">COMPRA</td>
+                                    <td class="p-2 text-right text-emerald font-bold">+25 unid.</td>
+                                    <td class="p-2 text-right">--</td>
+                                    <td class="p-2 text-right font-bold text-white">40 unid.</td>
+                                    <td class="p-2 text-right">C$ 340.00</td>
+                                    <td class="p-2 text-right font-bold text-emerald">C$ 13,300.00*</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2">12/Nov/2026</td>
+                                    <td class="p-2">Fact. Venta #001-020</td>
+                                    <td class="p-2 text-center text-rose-400">VENTA</td>
+                                    <td class="p-2 text-right">--</td>
+                                    <td class="p-2 text-right text-rose-400 font-bold">-4 unid.</td>
+                                    <td class="p-2 text-right font-bold text-white">36 unid.</td>
+                                    <td class="p-2 text-right">C$ 332.50</td>
+                                    <td class="p-2 text-right font-bold text-emerald">C$ 11,970.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2">28/Nov/2026</td>
+                                    <td class="p-2">Fact. Venta #001-040</td>
+                                    <td class="p-2 text-center text-rose-400">VENTA</td>
+                                    <td class="p-2 text-right">--</td>
+                                    <td class="p-2 text-right text-rose-400 font-bold">-1 unid.</td>
+                                    <td class="p-2 text-right font-bold text-white">35 unid.</td>
+                                    <td class="p-2 text-right">C$ 332.50</td>
+                                    <td class="p-2 text-right font-bold text-emerald">C$ 11,637.50</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-[10px] text-slate-400">
+                        *Cálculo Ponderado: (15 unid × C$ 320 + 25 unid × C$ 340) / 40 unid = <b>C$ 332.50 NIO por unidad</b>. Este control automático reduce la merma del 4.0% al 0.5%, ahorrando <b>+$2,853.06 USD/año</b>.
+                    </p>
+                </div>
+
+                <!-- TAB 4 (NUEVA): Comprobantes de Gastos Fijos (Recibo de Luz Disnorte-Dissur, Internet ISP y CLOC) -->
+                <div id="ev-tab-gastos" class="ev-tab-content hidden space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Respaldo de Gastos Fijos Operativos (OPEX $200/mes) y Auditoría CLOC</h4>
+                            <p class="text-[11px] text-slate-400">Comprobación documental del recibo de energía eléctrica (Disnorte-Dissur T-B), fibra óptica ISP, póliza de mantenimiento y conteo de líneas de código.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=18" target="_blank" class="ref-link" title="Ver Auditoría OPEX y Tarifa Eléctrica T-B en Informe Financiero (Pág. 18)">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                                <span>Ver en Informe Financiero (Pág. 18)</span>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                            <span class="font-mono text-amber-300 bg-amber-950/60 border border-amber-500/30 px-3 py-1 rounded-lg">OPEX: $200.00 USD/mes</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Recibo Simulado Disnorte-Dissur -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-amber-500/40 font-mono text-[11px] space-y-2">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                                <div>
+                                    <b class="text-amber-400 text-xs block">DISNORTE-DISSUR · MANAGUA, NICARAGUA</b>
+                                    <span class="text-[10px] text-slate-400">Subsector Comercial Baja Tensión · Tarifa T-B (INE)</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">NIS: 2049182-0</span>
+                            </div>
+                            <div class="space-y-1 text-[10px] text-slate-300">
+                                <div class="flex justify-between"><span>Circuito / Ubicación:</span><b>Suburbana – El Zumen (Distrito III)</b></div>
+                                <div class="flex justify-between"><span>Carga Continua 24/7 (Rack 12U: 152 W × 720 h):</span><b>109.44 kWh/mes</b></div>
+                                <div class="flex justify-between"><span>Carga Diurna Clientes (8 Est. + PRN1: 369 W × 247 h):</span><b>91.14 kWh/mes</b></div>
+                                <div class="flex justify-between text-white font-bold border-t border-slate-800 pt-1"><span>ENERGÍA ACTIVA CONSUMIDA TI:</span><span>200.58 kWh/mes</span></div>
+                                <div class="flex justify-between"><span>Tarifa Pliego INE Vigente ($0.195 USD / C$ 7.176 kWh):</span><b>C$ 1,439.25 NIO ($39.11)</b></div>
+                                <div class="flex justify-between text-emerald font-bold pt-1 border-t border-slate-800"><span>PARTIDA OPEX ASIGNADA (CON RESERVA):</span><span>$40.00 USD/mes (C$ 1,472)</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Factura Internet + Póliza Mantenimiento -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-blue-500/40 font-mono text-[11px] space-y-2">
+                            <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                                <div>
+                                    <b class="text-blue text-xs block">TELECOMUNICACIONES Y PÓLIZA DE MANTENIMIENTO</b>
+                                    <span class="text-[10px] text-slate-400">Contratos Recurrentes de Operación Mensual</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px]">OPEX Fijo</span>
+                            </div>
+                            <div class="space-y-1.5 text-[10px] text-slate-300">
+                                <div class="p-1.5 bg-slate-900 rounded flex justify-between">
+                                    <span><b>1. Internet Fibra 100 Mbps Simétrico</b> (Claro/Tigo $43.48 + IVA):</span>
+                                    <b class="text-white">$50.00 USD (C$ 1,840)</b>
+                                </div>
+                                <div class="p-1.5 bg-slate-900 rounded flex justify-between">
+                                    <span><b>2. Consumibles PRN1</b> (1,340 págs: Papel $10.72 + Tóner $5.22 + Kit $29.06):</span>
+                                    <b class="text-white">$45.00 USD (C$ 1,656)</b>
+                                </div>
+                                <div class="p-1.5 bg-slate-900 rounded flex justify-between">
+                                    <span><b>3. Póliza Mantenimiento ISO 14764</b> (Prev. $20 + SLA $25 + Adapt. $20):</span>
+                                    <b class="text-emerald">$65.00 USD (C$ 2,392)</b>
+                                </div>
+                                <div class="flex justify-between text-emerald font-bold pt-1 border-t border-slate-800">
+                                    <span>TOTAL OPEX MENSUAL AUDITADO:</span>
+                                    <span>$200.00 USD/mes ($2,400/año)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Captura Oficial de CLOC -->
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-700 space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <b class="text-white flex items-center gap-2"><i data-lucide="terminal" class="w-4 h-4 text-blue"></i> Evidencia de Conteo Físico de Líneas de Código (CLOC v1.98 — Base COCOMO II Post-Architecture)</b>
+                            <span class="text-[10px] text-emerald font-mono">126 Archivos · 8,757 SLOC = 8.757 KLOC</span>
+                        </div>
+                        <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-900 flex items-center justify-center">
+                            <img src="evidencias/cloc.png" alt="Captura de Auditoría CLOC 8,757 SLOC" class="w-full max-w-2xl h-auto object-contain">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: Capturas PostgreSQL / pgAdmin 4 (SABD) -->
+                <div id="ev-tab-postgres" class="ev-tab-content hidden space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-700/60">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Evidencias Reales del Diseño de Base de Datos (PostgreSQL 16 / pgAdmin 4)</h4>
+                            <p class="text-[11px] text-slate-400">Capturas reales de consultas transaccionales, vistas y procedimientos del Sistema de Administración de Base de Datos en pgAdmin 4.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="docs/Informe_Financiero_y_de_Viabilidad.pdf#page=8" target="_blank" class="ref-link" title="Ver Estimación COCOMO II y Métricas de Código en Informe Financiero (Pág. 8)">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i>
+                                <span>COCOMO II (Pág. 8)</span>
+                                <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                            <span class="font-mono text-purple-400 bg-purple-950/60 border border-purple-500/30 px-3 py-1 rounded-lg">47 Consultas BD</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-700 space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <b class="text-white">Vista 3: Mapeo de Transacciones (Base para Recibo)</b>
+                                <span class="text-[10px] text-slate-400 font-mono">SABD Pág. 35</span>
+                            </div>
+                            <div class="rounded-lg overflow-hidden border border-slate-800 bg-black flex items-center justify-center">
+                                <img src="evidencias/recibo_pgadmin.png" alt="Vista 3 Recibo del Cliente en pgAdmin 4 (PostgreSQL)" class="w-full h-auto object-contain max-h-56">
+                            </div>
+                            <p class="text-[10px] text-slate-400">
+                                Ejecución SQL en PostgreSQL que mapea cliente, identificación, número de comprobante, ítems facturados y totales transaccionados.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-700 space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <b class="text-white">Consulta 7: Ventas Totales por Tipo de Pago</b>
+                                <span class="text-[10px] text-slate-400 font-mono">SABD Pág. 30</span>
+                            </div>
+                            <div class="rounded-lg overflow-hidden border border-slate-800 bg-black flex items-center justify-center">
+                                <img src="evidencias/pago_pgadmin.png" alt="Consulta 7 Tipo de Pago en pgAdmin 4 (PostgreSQL)" class="w-full h-auto object-contain max-h-56">
+                            </div>
+                            <p class="text-[10px] text-slate-400">
+                                Agrupación de transacciones comerciales por método Efectivo vs. Tarjeta para conciliación de caja en PostgreSQL.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-700 space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <b class="text-white">Consulta 9: Valor Total del Inventario</b>
+                                <span class="text-[10px] text-slate-400 font-mono">SABD Pág. 31</span>
+                            </div>
+                            <div class="rounded-lg overflow-hidden border border-slate-800 bg-black flex items-center justify-center">
+                                <img src="evidencias/inventario_pgadmin.png" alt="Consulta 9 Valor de Inventario en pgAdmin 4 (PostgreSQL)" class="w-full h-auto object-contain max-h-56">
+                            </div>
+                            <p class="text-[10px] text-slate-400">
+                                Cálculo del valor del stock en bodega (unidades × costo de catálogo) para control patrimonial con formato en Córdobas (TO_CHAR).
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-700 space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <b class="text-white">Procedimiento 2: Apertura de Nueva Factura Maestro</b>
+                                <span class="text-[10px] text-slate-400 font-mono">SABD Pág. 36</span>
+                            </div>
+                            <div class="rounded-lg overflow-hidden border border-slate-800 bg-black flex items-center justify-center">
+                                <img src="evidencias/sp_pgadmin.png" alt="Procedimiento Factura Maestro en pgAdmin 4 (PL/pgSQL)" class="w-full h-auto object-contain max-h-56">
+                            </div>
+                            <p class="text-[10px] text-slate-400">
+                                Rutina transaccional atómica en PL/pgSQL para apertura de comprobantes y retorno de ID secuencial vía cláusula RETURNING.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer del modal -->
+            <div class="px-6 py-3 border-t border-slate-700/60 bg-slate-800/60 flex justify-between items-center text-[11px] text-slate-400">
+                <span>Presiona <kbd class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 font-mono">ESC</kbd> para cerrar</span>
+                <button onclick="toggleEvidenceModal(false)" class="px-4 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium transition-colors">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

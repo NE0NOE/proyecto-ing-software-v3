@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentación 3D Hub & Spoke</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Three.js desde CDN (requiere internet). Se usa un importmap para que OrbitControls encuentre "three". -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+    <!-- GSAP para animaciones suaves de cámara -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+    <div class="panel-header" id="ui-panel" style="position: absolute; top: 20px; left: 30px; z-index: 20; pointer-events: none;">
+        <h1 style="font-size: 26px; font-weight: 800; color: #5B9BD5; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Moto Repuestos El Centenario</h1>
+        <p style="font-size: 14px; color: #5B9BD5; margin-top: 4px; font-weight: 400;">Ingeniería de Software 1</p>
+    </div>
+    <div id="canvas-container"></div>
+    <button id="back-button">Volver al Mapa General</button>
+    <div id="team-credits" style="position: absolute; bottom: 25px; left: 30px; z-index: 20; color: rgba(240, 244, 248, 0.7); font-size: 12px; line-height: 1.6; pointer-events: none; opacity: 0;">
+        <p style="margin: 0; font-weight: 800; color: #5B9BD5; letter-spacing: 0.5px;">EQUIPO DE TRABAJO:</p>
+        <p style="margin: 0;">Noel Isaac Alemán Carballo</p>
+        <p style="margin: 0;">Mendell Noé Parrales Molina</p>
+        <p style="margin: 0;">Ángel Antonio Alonso Suárez</p>
+    </div>
+
+    <!-- Panel de Información SOLID (Galería) -->
+    <div id="solid-info-panel" style="position: absolute; top: 30px; right: 40px; width: 350px; z-index: 20; color: white; background: rgba(15, 23, 42, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #00ffff; box-shadow: 0 10px 30px rgba(0,255,255,0.2); pointer-events: auto; opacity: 0; display: none; backdrop-filter: blur(10px);">
+        <span id="solid-status" style="display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; color: #0f172a; background: #2ecc71; letter-spacing: 1px; margin-bottom: 10px;">APLICADO</span>
+        <h2 id="solid-title" style="margin: 0 0 10px 0; color: #ffffff; font-size: 22px;">S · Responsabilidad Única</h2>
+        <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #00ffff; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 11px; color: #9ca3af; font-family: monospace;">EVIDENCIA EN EL CÓDIGO</p>
+            <p id="solid-evidence" style="margin: 5px 0 0 0; font-size: 13px; color: #e2e8f0; font-family: monospace;">pricing.py</p>
+        </div>
+        <p id="solid-desc" style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #cbd5e1;">Una clase debe tener una sola razón para cambiar.</p>
+        <button id="next-solid-btn" style="width: 100%; padding: 12px; background: #00ffff; color: #0f172a; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s;">Siguiente Principio ➔</button>
+    </div>
+
+    <!-- Panel de Información UX -->
+    <div id="ux-info-panel" style="position: absolute; top: 30px; right: 40px; width: 350px; z-index: 20; color: white; background: rgba(15, 23, 42, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #e74c3c; box-shadow: 0 10px 30px rgba(231,76,60,0.2); pointer-events: auto; opacity: 0; display: none; backdrop-filter: blur(10px);">
+        <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #e74c3c; text-transform: uppercase;">Experiencia de Usuario</p>
+        <h2 id="ux-role" style="margin: 0 0 10px 0; color: #ffffff; font-size: 24px;">Vendedor</h2>
+        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 12px; color: #9ca3af;">TAREA CRÍTICA</p>
+            <p id="ux-task" style="margin: 5px 0 0 0; font-size: 15px; color: #3498db; font-weight: bold;">Facturación Rápida</p>
+        </div>
+        <p id="ux-desc" style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #cbd5e1;">Foco inicial en el POS con lector de barras...</p>
+        <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 8px;">
+            <span style="display: inline-block; width: 12px; height: 12px; background-color: #f1c40f; border-radius: 50%;"></span>
+            <span style="font-size: 12px; color: #f1c40f;">LÍMITE HONESTO: Inspección de diseño (No estudio UX real)</span>
+        </div>
+        <button id="next-ux-btn" style="width: 100%; padding: 12px; background: #e74c3c; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s;">Siguiente Rol ➔</button>
+    </div>
+
+    <!-- Panel de Información Seguridad -->
+    <div id="security-info-panel" style="position: absolute; top: 30px; right: 40px; width: 350px; z-index: 20; color: white; background: rgba(15, 23, 42, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #f1c40f; box-shadow: 0 10px 30px rgba(241,196,15,0.2); pointer-events: auto; opacity: 0; display: none; backdrop-filter: blur(10px);">
+        <p id="security-level" style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #f1c40f; text-transform: uppercase;">Nivel 1</p>
+        <h2 id="security-title" style="margin: 0 0 10px 0; color: #ffffff; font-size: 22px;">Encriptación de Base de Datos</h2>
+        <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #f1c40f; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 11px; color: #9ca3af; font-family: monospace;">EVIDENCIA DEL INFORME</p>
+            <p id="security-evidence" style="margin: 5px 0 0 0; font-size: 14px; color: #e2e8f0; font-family: monospace;">Revisión de configuración (env variables)</p>
+        </div>
+        <p id="security-desc" style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #cbd5e1;">Protección de datos en reposo...</p>
+        <button id="next-security-btn" style="width: 100%; padding: 12px; background: #f1c40f; color: #0f172a; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s;">Siguiente Capa ➔</button>
+    </div>
+
+    <!-- Panel de Información Pruebas al Software -->
+    <div id="testing-info-panel" style="position: absolute; top: 30px; right: 40px; width: 350px; z-index: 20; color: white; background: rgba(15, 23, 42, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #9b59b6; box-shadow: 0 10px 30px rgba(155,89,182,0.2); pointer-events: auto; opacity: 0; display: none; backdrop-filter: blur(10px);">
+        <p id="testing-level" style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #9b59b6; text-transform: uppercase;">Fase 1</p>
+        <h2 id="testing-title" style="margin: 0 0 10px 0; color: #ffffff; font-size: 22px;">Pruebas Unitarias</h2>
+        <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #9b59b6; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 11px; color: #9ca3af; font-family: monospace;">EVIDENCIA DEL INFORME</p>
+            <p id="testing-evidence" style="margin: 5px 0 0 0; font-size: 14px; color: #e2e8f0; font-family: monospace;">Reporte: 95% de los tests unitarios pasados</p>
+        </div>
+        <p id="testing-desc" style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #cbd5e1;">Validan el comportamiento de funciones individuales...</p>
+        <button id="next-testing-btn" style="width: 100%; padding: 12px; background: #9b59b6; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s;">Siguiente Fase ➔</button>
+    </div>
+
+    <!-- Panel de Información Pruebas DB -->
+    <div id="db-info-panel" style="position: absolute; top: 30px; right: 40px; width: 350px; z-index: 20; color: white; background: rgba(15, 23, 42, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #3498db; box-shadow: 0 10px 30px rgba(52,152,219,0.2); pointer-events: auto; opacity: 0; display: none; backdrop-filter: blur(10px);">
+        <p id="db-phase" style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #3498db; text-transform: uppercase;">Data Normal</p>
+        <h2 id="db-title" style="margin: 0 0 10px 0; color: #ffffff; font-size: 22px;">Importación Estándar</h2>
+        <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #3498db; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 11px; color: #9ca3af; font-family: monospace;">TIEMPO DE EJECUCIÓN</p>
+            <p id="db-evidence" style="margin: 5px 0 0 0; font-size: 14px; color: #e2e8f0; font-family: monospace;">Reporte 05: 52.08 segundos</p>
+        </div>
+        <p id="db-desc" style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #cbd5e1;">Simulación de carga diaria...</p>
+        <button id="next-db-btn" style="width: 100%; padding: 12px; background: #3498db; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s;">Siguiente ➔</button>
+    </div>
+
+    <!-- Panel de Información Escenario Técnico -->
+    <div id="tech-info-panel" style="position: absolute; top: 30px; right: 40px; width: 350px; z-index: 20; color: white; background: rgba(15, 23, 42, 0.85); padding: 25px; border-radius: 12px; border: 1px solid #00ffff; box-shadow: 0 10px 30px rgba(0,255,255,0.2); pointer-events: auto; opacity: 0; display: none; backdrop-filter: blur(10px);">
+        <p id="tech-view" style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #00ffff; text-transform: uppercase;">Vista de Red</p>
+        <h2 id="tech-title" style="margin: 0 0 10px 0; color: #ffffff; font-size: 22px;">Tráfico de Datos Locales</h2>
+        <div style="background: rgba(0,0,0,0.4); border-left: 4px solid #00ffff; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 11px; color: #9ca3af; font-family: monospace;">DATO CLAVE</p>
+            <p id="tech-evidence" style="margin: 5px 0 0 0; font-size: 14px; color: #e2e8f0; font-family: monospace;">Requisito NF: Ancho de banda local</p>
+        </div>
+        <p id="tech-desc" style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #cbd5e1;">El sistema está diseñado para LAN...</p>
+        <button id="next-tech-btn" style="width: 100%; padding: 12px; background: #00ffff; color: #0f172a; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.3s;">Siguiente Vista ➔</button>
+    </div>
+
+    <!-- Panel de código real (se llena desde data/code.js) -->
+    <div id="code-panel">
+        <div id="code-header">
+            <span id="code-title">CÓDIGO REAL · REPOSITORIO</span>
+            <button id="code-toggle" type="button">Ocultar código</button>
+        </div>
+        <div id="code-tabs"></div>
+        <div id="code-file"></div>
+        <div id="code-body"></div>
+        <div id="code-note"></div>
+    </div>
+
+    <!-- Insignia de etapa del informe (se llena desde data.js > stageInfo) -->
+    <div id="stage-badge" style="position: absolute; top: 400px; right: 40px; width: 350px; box-sizing: border-box; z-index: 20; pointer-events: none; opacity: 0; background: rgba(15, 23, 42, 0.85); padding: 12px 16px; border-radius: 10px; border: 1px solid #00ffff; backdrop-filter: blur(10px); color: #e2e8f0; font-size: 12px; line-height: 1.5;">
+        <p id="stage-doc" style="margin: 0; font-weight: 800; letter-spacing: 0.5px;">INFORME</p>
+        <p style="margin: 6px 0 0 0; font-size: 10px; color: #9ca3af; font-family: monospace;">ETAPA</p>
+        <p id="stage-name" style="margin: 0; font-size: 13px; font-weight: bold; color: #ffffff;">—</p>
+        <p id="stage-note" style="margin: 6px 0 0 0; color: #f1c40f;">—</p>
+        <p id="stage-version" style="margin: 4px 0 0 0; color: #9ca3af; font-family: monospace;">—</p>
+    </div>
+
+    <!-- Arranque: trae Three.js y OrbitControls (CDN) y luego carga los scripts del proyecto en orden.
+         Los scripts locales son clásicos, por eso no necesitan servidor y se pueden abrir con doble clic. -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+        window.THREE = THREE;
+        window.OrbitControls = OrbitControls;
+
+        const archivos = [
+            'data/data.js', 'data/code.js',
+            'scenes/shared.js', 'scenes/solid.js', 'scenes/ux.js', 'scenes/security.js',
+            'scenes/testing.js', 'scenes/db.js', 'scenes/tech.js',
+            'app.js'
+        ];
+        (async () => {
+            for (const src of archivos) {
+                await new Promise((ok, fail) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.onload = ok;
+                    s.onerror = () => fail(new Error('No se pudo cargar ' + src));
+                    document.body.appendChild(s);
+                });
+            }
+        })().catch(e => { console.error(e); alert(e.message); });
+    </script>
+</body>
+</html>
