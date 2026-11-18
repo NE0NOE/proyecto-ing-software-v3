@@ -165,14 +165,14 @@ export const REFS_BY_SLIDE = {
     { type: 'pdf', label: '📄 Cap. 01 › Seguridad DCL · pág. 34', cap: '01', seccion: 'Seguridad y control de accesos', page: 34, query: 'rol_administrador', mdLine: 673 },
   ]),
   S08: tagRefs('S08', [
-    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de usuario (ST-REQ) · pág. 67', cap: '03', seccion: 'Requisitos de usuario', page: 67, query: 'STREQ001', mdLine: 1253, primary: true },
-    { type: 'pdf', label: '📄 Cap. 03 › Requisitos funcionales SyRS · pág. 72', cap: '03', seccion: 'Requisitos funcionales', page: 72, query: 'SYSFN-001', mdLine: 1332 },
-    { type: 'pdf', label: '📄 Cap. 03 › SRS › Funciones · pág. 86', cap: '03', seccion: 'SRS › Funciones', page: 86, query: 'SRSAUT001', mdLine: 1583 },
+    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de usuario (ST-REQ) · pág. 67', cap: '03', seccion: 'Requisitos de usuario', page: 67, query: 'Requisitos de usuario', mdLine: 1253, primary: true },
+    { type: 'pdf', label: '📄 Cap. 03 › Requisitos funcionales SyRS · pág. 72', cap: '03', seccion: 'Requisitos funcionales', page: 72, query: 'Requisitos funcionales', mdLine: 1332 },
+    { type: 'pdf', label: '📄 Cap. 03 › SRS › Funciones · pág. 86', cap: '03', seccion: 'SRS › Funciones', page: 86, query: '15.2 Funciones', mdLine: 1583 },
   ]),
   S09: tagRefs('S09', [
     { type: 'pdf', label: '📄 Cap. 03 › Políticas y reglas operacionales · pág. 64', cap: '03', seccion: 'Políticas y reglas operacionales', page: 64, query: 'RN-01', mdLine: 1211 },
-    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de rendimiento · pág. 75', cap: '03', seccion: 'Requisitos de rendimiento', page: 75, query: 'SYSPR-001', mdLine: 1380, primary: true },
-    { type: 'pdf', label: '📄 Cap. 03 › Seguridad del sistema · pág. 79', cap: '03', seccion: 'Seguridad del sistema', page: 79, query: 'SYSSC-001', mdLine: 1448 },
+    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de rendimiento · pág. 75', cap: '03', seccion: 'Requisitos de rendimiento', page: 75, query: 'Requisitos de rendimiento', mdLine: 1380, primary: true },
+    { type: 'pdf', label: '📄 Cap. 03 › Seguridad del sistema · pág. 79', cap: '03', seccion: 'Seguridad del sistema', page: 79, query: 'Seguridad del sistema', mdLine: 1448 },
   ]),
   S10: tagRefs('S10', [
     { type: 'pdf', label: '📄 Cap. 04 › Matriz de evaluación comparativa · pág. 117', cap: '04', seccion: 'Alternativas de arquitectura › Matriz comparativa', page: 117, query: 'Matriz de evaluación comparativa', mdLine: 2125, primary: true },
@@ -259,14 +259,14 @@ export const REFS_BY_SLIDE = {
     { type: 'excel', label: '📊 Infraestructura · A1:F37', sheet: 'Infraestructura', range: 'A1:F37' },
   ]),
   S25: tagRefs('S25', [
-    { type: 'pdf', label: '📄 Cap. 15 › Ticket promedio · pág. 310', cap: '15', seccion: 'Modelo Matemático de Facturación', page: 310, query: '240.38', mdLine: 5798 },
+    { type: 'pdf', label: '📄 Cap. 15 › Ticket promedio · pág. 310', cap: '15', seccion: 'Modelo Matemático de Facturación', page: 310, query: 'Modelo Matemático de Facturación', mdLine: 5798 },
     { type: 'pdf', label: '📄 Cap. 15 › Teoría de Colas (M/M/c) · pág. 312', cap: '15', seccion: 'Teoría de Colas (M/M/c)', page: 312, query: 'Teoría de Colas', mdLine: 5893, primary: true },
     { type: 'excel', label: '📊 Supuestos · A20:E30', sheet: 'Supuestos', range: 'A20:E30' },
   ]),
   S26: tagRefs('S26', [
     { type: 'pdf', label: '📄 Cap. 15 › COCOMO II Post-Architecture · pág. 314', cap: '15', seccion: 'Estimación COCOMO II', page: 314, query: '8.757', mdLine: 6028, primary: true },
     { type: 'pdf', label: '📄 Cap. 15 › Cálculo monetario · pág. 315', cap: '15', seccion: 'Cálculo Monetario del Desarrollo', page: 315, query: 'Cálculo Monetario del Desarrollo', mdLine: 6068 },
-    { type: 'pdf', label: '📄 Cap. 05 › Conciliación COCOMO II · pág. 156', cap: '05', seccion: 'Conciliación Formal COCOMO II', page: 156, query: '9.01', mdLine: 3131 },
+    { type: 'pdf', label: '📄 Cap. 05 › Conciliación COCOMO II · pág. 156', cap: '05', seccion: 'Conciliación Formal COCOMO II', page: 156, query: 'Conciliación Formal', mdLine: 3131 },
     { type: 'excel', label: '📊 COCOMO · A1:D49', sheet: 'COCOMO', range: 'A1:D49' },
   ]),
   S27: tagRefs('S27', [
@@ -281,7 +281,7 @@ export const REFS_BY_SLIDE = {
     { type: 'pdf', label: '📄 Cap. 15 › Métricas Financieras · pág. 326', cap: '15', seccion: 'Cálculo Detallado de Métricas Financieras', page: 326, query: 'Cálculo Detallado de Métricas Financieras', mdLine: 6905, primary: true },
     { type: 'pdf', label: '📄 Cap. 15 › Análisis de Sensibilidad · pág. 327', cap: '15', seccion: 'Análisis de Sensibilidad', page: 327, query: '15,176.26', mdLine: 6948 },
     { type: 'pdf', label: '📄 Cap. 17 › Resumen Ejecutivo de Métricas · pág. 344', cap: '17', seccion: 'Resumen Ejecutivo de Métricas', page: 344, query: 'Resumen Ejecutivo de Métricas', mdLine: 7429 },
-    { type: 'excel', label: '📊 Flujos · B97:B105', sheet: 'Flujos', range: 'A85:G107' },
+    { type: 'excel', label: '📊 Flujos · A85:G107', sheet: 'Flujos', range: 'A85:G107' },
     { type: 'excel', label: '📊 Resumen · A9:K15', sheet: 'Resumen', range: 'A9:K15' },
   ]),
   S29: tagRefs('S29', [
