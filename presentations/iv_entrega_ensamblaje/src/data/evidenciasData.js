@@ -26,6 +26,7 @@ export const EVIDENCIAS = [
     environment: 'PostgreSQL 18.4 local (127.0.0.1:55432, base temporal aislada) · Python / Django',
     metrics: [
       { label: 'Pruebas ejecutadas', value: '120 pruebas', highlight: 'green' },
+      { label: 'Progresión histórica', value: '104 → 111 → 113 → 120 pruebas', highlight: 'blue' },
       { label: 'Resultado', value: 'OK (código 0)', highlight: 'green' },
       { label: 'Fallos / Errores', value: '0 fallos · 0 errores', highlight: 'green' },
       { label: 'Duración total', value: '289,28 s (~4,82 min)', highlight: 'blue' },
@@ -34,7 +35,7 @@ export const EVIDENCIAS = [
       { label: 'Permisos RBAC', value: '37 / 14 / 74 / 47', highlight: 'orange' },
     ],
     excerpt: `Found 120 test(s).\nSystem check identified no issues (0 silenced).\nRan 120 tests in 289.280s\n\nOK\nDestroying test database for alias 'default'...`,
-    scopeLimit: 'Ejecutado localmente sobre PostgreSQL 18.4 con base de datos de pruebas aislada; incluye pruebas de concurrencia, importación masiva y restauración.',
+    scopeLimit: 'Ejecutado localmente sobre PostgreSQL 18.4 con base de datos de pruebas aislada (progresión 104 → 111 → 113 → 120); incluye pruebas de concurrencia, importación masiva y restauración.',
     sourceFile: 'MREC/docs/evidencias/2026-10-11/2026-10-11-regresion-completa.md',
   },
   {
@@ -137,7 +138,7 @@ export const EVIDENCIAS = [
       { label: 'verify_restore', value: '46 migraciones, 2 cuentas, 0 ventas · 7,27 s', highlight: 'green' },
     ],
     excerpt: `mrec_20261011T211644Z_49b309f3.json: OK – SHA-256 y tamaño coinciden\nverify_restore completado en 7.27 s: 46 migraciones aplicadas, integridad verificada.`,
-    scopeLimit: 'Prueba física de copia externa cifrada con BitLocker XTS-AES 256 y verificación criptográfica.',
+    scopeLimit: 'Prueba física de copia externa cifrada con BitLocker XTS-AES 256 y verificación criptográfica. Cadena ejecutada: backup_database, verify_backups y verify_restore --confirm ENSAYO-RECUPERACION.',
     sourceFile: 'MREC/docs/evidencias/2026-10-11/2026-10-11-respaldo-usb.md',
   },
   {

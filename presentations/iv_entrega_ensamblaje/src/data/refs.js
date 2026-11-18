@@ -142,7 +142,7 @@ export const REFS_BY_SLIDE = {
     { type: 'pdf', label: '📄 Cap. 02 › Problema de estudio · pág. 39', cap: '02', seccion: 'Problema de estudio', page: 39, query: 'Problema de estudio', mdLine: 877 },
   ]),
   S03: tagRefs('S03', [
-    { type: 'pdf', label: '📄 Cap. 01 › Caso de estudio · pág. 10', cap: '01', seccion: 'Caso de estudio', page: 10, query: 'Caso de estudio', mdLine: 128 },
+    { type: 'pdf', label: '📄 Cap. 01 › Caso de estudio · pág. 12', cap: '01', seccion: 'Caso de estudio', page: 12, query: 'Caso de estudio', mdLine: 128 },
     { type: 'pdf', label: '📄 Cap. 02 › Contexto del negocio · pág. 41', cap: '02', seccion: 'Contexto del negocio', page: 41, query: 'Contexto del negocio', mdLine: 863, primary: true },
   ]),
   S04: tagRefs('S04', [
@@ -160,19 +160,19 @@ export const REFS_BY_SLIDE = {
   ]),
   S07: tagRefs('S07', [
     { type: 'pdf', label: '📄 Cap. 01 › Trigger 1 (fn_deducir_stock_venta) · pág. 33', cap: '01', seccion: 'Trigger 1', page: 33, query: 'fn_deducir_stock_venta', mdLine: 639, primary: true },
-    { type: 'pdf', label: '📄 Cap. 01 › Catálogo de consultas · pág. 26', cap: '01', seccion: 'Catálogo de consultas', page: 26, query: 'Catálogo de consultas', mdLine: 365 },
+    { type: 'pdf', label: '📄 Cap. 01 › Objetos generados en BD · pág. 26', cap: '01', seccion: 'Objetos generados en la base de datos', page: 26, query: 'Objetos generados en la base de datos', mdLine: 365 },
     { type: 'pdf', label: '📄 Cap. 01 › Vistas · pág. 32', cap: '01', seccion: 'Vistas', page: 32, query: 'vw_alertas_stock_critico', mdLine: 541 },
     { type: 'pdf', label: '📄 Cap. 01 › Seguridad DCL · pág. 34', cap: '01', seccion: 'Seguridad y control de accesos', page: 34, query: 'rol_administrador', mdLine: 673 },
   ]),
   S08: tagRefs('S08', [
-    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de usuario (ST-REQ) · pág. 67', cap: '03', seccion: 'Requisitos de usuario', page: 67, query: 'ST-REQ-001', mdLine: 1253, primary: true },
-    { type: 'pdf', label: '📄 Cap. 03 › Requisitos funcionales SyRS · pág. 72', cap: '03', seccion: 'Requisitos funcionales', page: 72, query: 'SYS-FN-001', mdLine: 1332 },
-    { type: 'pdf', label: '📄 Cap. 03 › SRS › Funciones · pág. 84', cap: '03', seccion: 'SRS › Funciones', page: 84, query: 'SRS-AUT-001', mdLine: 1583 },
+    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de usuario (ST-REQ) · pág. 67', cap: '03', seccion: 'Requisitos de usuario', page: 67, query: 'STREQ001', mdLine: 1253, primary: true },
+    { type: 'pdf', label: '📄 Cap. 03 › Requisitos funcionales SyRS · pág. 72', cap: '03', seccion: 'Requisitos funcionales', page: 72, query: 'SYSFN-001', mdLine: 1332 },
+    { type: 'pdf', label: '📄 Cap. 03 › SRS › Funciones · pág. 86', cap: '03', seccion: 'SRS › Funciones', page: 86, query: 'SRSAUT001', mdLine: 1583 },
   ]),
   S09: tagRefs('S09', [
     { type: 'pdf', label: '📄 Cap. 03 › Políticas y reglas operacionales · pág. 64', cap: '03', seccion: 'Políticas y reglas operacionales', page: 64, query: 'RN-01', mdLine: 1211 },
-    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de rendimiento · pág. 75', cap: '03', seccion: 'Requisitos de rendimiento', page: 75, query: 'SYS-PR-001', mdLine: 1380, primary: true },
-    { type: 'pdf', label: '📄 Cap. 03 › Seguridad del sistema · pág. 79', cap: '03', seccion: 'Seguridad del sistema', page: 79, query: 'SYS-SC-001', mdLine: 1448 },
+    { type: 'pdf', label: '📄 Cap. 03 › Requisitos de rendimiento · pág. 75', cap: '03', seccion: 'Requisitos de rendimiento', page: 75, query: 'SYSPR-001', mdLine: 1380, primary: true },
+    { type: 'pdf', label: '📄 Cap. 03 › Seguridad del sistema · pág. 79', cap: '03', seccion: 'Seguridad del sistema', page: 79, query: 'SYSSC-001', mdLine: 1448 },
   ]),
   S10: tagRefs('S10', [
     { type: 'pdf', label: '📄 Cap. 04 › Matriz de evaluación comparativa · pág. 117', cap: '04', seccion: 'Alternativas de arquitectura › Matriz comparativa', page: 117, query: 'Matriz de evaluación comparativa', mdLine: 2125, primary: true },
@@ -255,7 +255,7 @@ export const REFS_BY_SLIDE = {
   S24: tagRefs('S24', [
     { type: 'pdf', label: '📄 Cap. 14 › Proforma estructural (19 ítems) · pág. 300', cap: '14', seccion: 'Proforma Estructural Consolidada', page: 300, query: 'Proforma de Equipamiento', mdLine: 5417, primary: true },
     { type: 'pdf', label: '📄 Cap. 14 › Modelado Tributario DGA · pág. 302', cap: '14', seccion: 'Modelado Tributario Aduanero', page: 302, query: 'CIF', mdLine: 5566 },
-    { type: 'pdf', label: '📄 Cap. 14 › Dualidad presupuestaria · pág. 304', cap: '14', seccion: 'Dualidad Presupuestaria', page: 304, query: '10,162.14', mdLine: 5626 },
+    { type: 'pdf', label: '📄 Cap. 14 › Dualidad presupuestaria · pág. 304', cap: '14', seccion: 'Dualidad Presupuestaria', page: 304, query: 'Dualidad Presupuestaria', mdLine: 5626 },
     { type: 'excel', label: '📊 Infraestructura · A1:F37', sheet: 'Infraestructura', range: 'A1:F37' },
   ]),
   S25: tagRefs('S25', [
@@ -265,7 +265,7 @@ export const REFS_BY_SLIDE = {
   ]),
   S26: tagRefs('S26', [
     { type: 'pdf', label: '📄 Cap. 15 › COCOMO II Post-Architecture · pág. 314', cap: '15', seccion: 'Estimación COCOMO II', page: 314, query: '8.757', mdLine: 6028, primary: true },
-    { type: 'pdf', label: '📄 Cap. 15 › Cálculo monetario · pág. 315', cap: '15', seccion: 'Cálculo Monetario del Desarrollo', page: 315, query: '2,700', mdLine: 6068 },
+    { type: 'pdf', label: '📄 Cap. 15 › Cálculo monetario · pág. 315', cap: '15', seccion: 'Cálculo Monetario del Desarrollo', page: 315, query: 'Cálculo Monetario del Desarrollo', mdLine: 6068 },
     { type: 'pdf', label: '📄 Cap. 05 › Conciliación COCOMO II · pág. 156', cap: '05', seccion: 'Conciliación Formal COCOMO II', page: 156, query: '9.01', mdLine: 3131 },
     { type: 'excel', label: '📊 COCOMO · A1:D49', sheet: 'COCOMO', range: 'A1:D49' },
   ]),
@@ -278,8 +278,8 @@ export const REFS_BY_SLIDE = {
     { type: 'excel', label: '📊 Flujos · A85:G107', sheet: 'Flujos', range: 'A85:G107' },
   ]),
   S28: tagRefs('S28', [
-    { type: 'pdf', label: '📄 Cap. 15 › Métricas Financieras · pág. 326', cap: '15', seccion: 'Cálculo Detallado de Métricas', page: 326, query: '15,176.26', mdLine: 6905, primary: true },
-    { type: 'pdf', label: '📄 Cap. 15 › Análisis de Sensibilidad · pág. 327', cap: '15', seccion: 'Análisis de Sensibilidad', page: 327, query: 'Análisis de Sensibilidad', mdLine: 6948 },
+    { type: 'pdf', label: '📄 Cap. 15 › Métricas Financieras · pág. 326', cap: '15', seccion: 'Cálculo Detallado de Métricas Financieras', page: 326, query: 'Cálculo Detallado de Métricas Financieras', mdLine: 6905, primary: true },
+    { type: 'pdf', label: '📄 Cap. 15 › Análisis de Sensibilidad · pág. 327', cap: '15', seccion: 'Análisis de Sensibilidad', page: 327, query: '15,176.26', mdLine: 6948 },
     { type: 'pdf', label: '📄 Cap. 17 › Resumen Ejecutivo de Métricas · pág. 344', cap: '17', seccion: 'Resumen Ejecutivo de Métricas', page: 344, query: 'Resumen Ejecutivo de Métricas', mdLine: 7429 },
     { type: 'excel', label: '📊 Flujos · B97:B105', sheet: 'Flujos', range: 'A85:G107' },
     { type: 'excel', label: '📊 Resumen · A9:K15', sheet: 'Resumen', range: 'A9:K15' },
