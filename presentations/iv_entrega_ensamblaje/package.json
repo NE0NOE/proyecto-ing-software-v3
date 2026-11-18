@@ -1,0 +1,32 @@
+{
+  "name": "mrec-iv-entrega-ensamblaje",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "El Ensamblaje — Presentación interactiva 3D offline de Moto Repuestos El Centenario, S.A. (IV Entrega)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test:e2e": "node tests/run-e2e.mjs"
+  },
+  "dependencies": {
+    "@fontsource/inter": "file:.vendor-tgz/fontsource-inter-5.3.0.tgz",
+    "@fontsource/jetbrains-mono": "file:.vendor-tgz/fontsource-jetbrains-mono-5.3.0.tgz",
+    "@fontsource/space-grotesk": "file:.vendor-tgz/fontsource-space-grotesk-5.3.0.tgz",
+    "gsap": "file:.vendor-tgz/gsap-3.15.1.tgz",
+    "katex": "file:.vendor-tgz/katex-0.19.1.tgz",
+    "lucide": "file:.vendor-tgz/lucide-1.75.0.tgz",
+    "pdfjs-dist": "file:.vendor-tgz/pdfjs-dist-6.5.438.tgz",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright-core": "1.65.1",
+    "vite": "8.3.4"
+  },
+  "overrides": {
+    "commander": "file:.vendor-tgz/commander-15.1.0.tgz",
+    "@napi-rs/canvas": "file:.vendor-tgz/noop-canvas"
+  }
+}

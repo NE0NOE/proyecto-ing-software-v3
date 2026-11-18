@@ -1,0 +1,64 @@
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/jetbrains-mono/700.css";
+@import "katex/dist/katex.min.css";
+
+:root {
+  /* Stage & Brand */
+  --bg-stage: #161625;
+  --bg-space: #1a1a2e;
+  --mrec-blue: #5B9BD5;
+  --blueprint-cyan: #3BA0FF;
+  --blueprint-fill: #0D2A4A;
+  --ignition-orange: #FF6B1A;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(15, 23, 42, 0.85);
+  --glass-bg-dense: rgba(15, 23, 42, 0.92);
+  --glass-blur: blur(10px);
+  --glass-border: rgba(91, 155, 213, 0.28);
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  /* Act & Module Accents */
+  --accent-cyan: #00ffff;
+  --accent-amber: #f59e0b;
+  --accent-gold: #f1c40f;
+  --accent-crimson: #e94560;
+  --accent-purple: #9b59b6;
+  --accent-emerald: #2ecc71;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+
+  /* Text Colors */
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  /* Radii & Z-Layers */
+  --radius-card: 12px;
+  --radius-pill: 999px;
+  --z-canvas: 1;
+  --z-labels: 10;
+  --z-slide: 20;
+  --z-chrome: 30;
+  --z-notes: 35;
+  --z-faro: 45;
+  --z-overview: 50;
+  --z-drawer: 60;
+
+  /* Motion */
+  --dur-slide: 1.4s;
+  --dur-act: 2.8s;
+  --dur-drawer: 0.35s;
+  --ease-expo: cubic-bezier(0.22, 1, 0.36, 1);
+}
