@@ -226,11 +226,11 @@ export function initStage(canvasWrap, labelWrap, appState) {
     const rimTarget = new THREE.Color(t.rim);
 
     currentThemeTween = gsap.timeline();
-    currentThemeTween.to(scene.background, { r: bgTarget.r, g: bgTarget.g, b: bgTarget.b, duration: 0.9, ease: 'power2.out' }, 0);
-    currentThemeTween.to(scene.fog.color, { r: fogTarget.r, g: fogTarget.g, b: fogTarget.b, duration: 0.9, ease: 'power2.out' }, 0);
-    currentThemeTween.to(keyLight.color, { r: keyTarget.r, g: keyTarget.g, b: keyTarget.b, duration: 1.1, ease: 'power2.out' }, 0);
-    currentThemeTween.to(rimLight.color, { r: rimTarget.r, g: rimTarget.g, b: rimTarget.b, duration: 1.1, ease: 'power2.out' }, 0);
-    currentThemeTween.to(hemiLight, { intensity: t.ambient, duration: 1.1, ease: 'power2.out' }, 0);
+    currentThemeTween.to(scene.background, { r: bgTarget.r, g: bgTarget.g, b: bgTarget.b, duration: 0.5, ease: 'power2.out' }, 0);
+    currentThemeTween.to(scene.fog.color, { r: fogTarget.r, g: fogTarget.g, b: fogTarget.b, duration: 0.5, ease: 'power2.out' }, 0);
+    currentThemeTween.to(keyLight.color, { r: keyTarget.r, g: keyTarget.g, b: keyTarget.b, duration: 0.6, ease: 'power2.out' }, 0);
+    currentThemeTween.to(rimLight.color, { r: rimTarget.r, g: rimTarget.g, b: rimTarget.b, duration: 0.6, ease: 'power2.out' }, 0);
+    currentThemeTween.to(hemiLight, { intensity: t.ambient, duration: 0.6, ease: 'power2.out' }, 0);
   }
 
   function swapChapterProps(slide) {
@@ -274,8 +274,8 @@ export function initStage(canvasWrap, labelWrap, appState) {
         x: preset.pos[0],
         y: preset.pos[1],
         z: preset.pos[2],
-        duration: 1.85,
-        ease: 'power2.inOut',
+        duration: 0.9,
+        ease: 'power3.out',
       },
       0
     );
@@ -285,8 +285,8 @@ export function initStage(canvasWrap, labelWrap, appState) {
         x: tx,
         y: ty,
         z: tz,
-        duration: 1.85,
-        ease: 'power2.inOut',
+        duration: 0.9,
+        ease: 'power3.out',
       },
       0
     );
@@ -294,8 +294,8 @@ export function initStage(canvasWrap, labelWrap, appState) {
       camera,
       {
         fov: preset.fov || 44,
-        duration: 1.8,
-        ease: 'power2.inOut',
+        duration: 0.85,
+        ease: 'power2.out',
         onUpdate: () => camera.updateProjectionMatrix(),
       },
       0

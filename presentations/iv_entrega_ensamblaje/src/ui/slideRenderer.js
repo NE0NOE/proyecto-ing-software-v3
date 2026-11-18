@@ -699,7 +699,7 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
     actOverlay.classList.add('is-active');
     actTimer = setTimeout(() => {
       actOverlay.classList.remove('is-active');
-    }, 1100);
+    }, 750);
   }
 
   function renderSlide(slide, state, { awaitingStage = false } = {}) {
@@ -1016,7 +1016,7 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
           leaveTimer = null;
           if (completed || token !== pendingTransitionToken) return;
           renderSlide(slide, appState.getState(), { awaitingStage: true });
-        }, 220);
+        }, 160);
       } else {
         renderSlide(slide, state, { awaitingStage: true });
       }
@@ -1024,7 +1024,7 @@ export function initSlideRenderer(slideSlot, notesSlot, actOverlay, appState, st
       triggerActTransitionIfChanged(slide, state, meta);
       if (stageApi?.setSlide) {
         stageApi.setSlide(slide, { onTransitionComplete: finishTransition });
-        safetyTimer = setTimeout(finishTransition, 2500);
+        safetyTimer = setTimeout(finishTransition, 1400);
       } else {
         finishTransition();
       }

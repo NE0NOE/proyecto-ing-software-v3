@@ -61,30 +61,30 @@
 }
 
 .slide-card {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: opacity 0.16s ease, transform 0.16s ease;
 }
 
 .slide-card.is-leaving {
   opacity: 0;
-  transform: translateY(10px) scale(0.975);
+  transform: translateY(8px) scale(0.98);
   pointer-events: none;
 }
 
 .slide-card.is-awaiting-stage {
   opacity: 0;
   visibility: hidden;
-  transform: translateY(14px) scale(0.98);
+  transform: translateY(8px) scale(0.985);
   pointer-events: none;
 }
 
 .slide-card.is-entering {
-  animation: slideCardIn 0.45s var(--ease-expo) both;
+  animation: slideCardIn 0.36s var(--ease-expo) both;
 }
 
 @keyframes slideCardIn {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.98);
+    transform: translateY(8px) scale(0.985);
   }
   to {
     opacity: 1;
